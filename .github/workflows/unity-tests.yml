@@ -1,0 +1,63 @@
+name: Unity EditMode Tests
+
+# Requires GitHub secrets (Personal license activation):
+#   UNITY_LICENSE       — contents of Unity_lic.ulf (or serial flow)
+#   UNITY_EMAIL
+#   UNITY_PASSWORD
+# See: https://game.ci/docs/github/activation
+#
+# Without secrets this workflow is skipped.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "unity/**"
+      - ".github/workflows/unity-tests.yml"
+  pull_request:
+    paths:
+      - "unity/**"
+      - ".github/workflows/unity-tests.yml"
+
+concurrency:
+  group: unity-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  editmode:
+    name: EditMode
+    runs-on: ubuntu-latest
+    # Skip if license secret not configured
+    if: ${{ secrets.UNITY_LICENSE != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Library
+        uses: actions/cache@v4
+        with:
+          path: unity/Library
+          key: Library-ff-${{ hashFiles('unity/Packages/manifest.json', 'unity/ProjectSettings/ProjectVersion.txt') }}
+          restore-keys: |
+            Library-ff-
+
+      - name: Run EditMode tests
+        uses: game-ci/unity-test-runner@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          projectPath: unity
+          unityVersion: 6000.0.0f1
+          testMode: EditMode
+          checkName: EditMode Tests
+          artifactsPath: unity-test-results
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: editmode-results
+          path: unity-test-results

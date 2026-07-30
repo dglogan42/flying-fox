@@ -50,9 +50,12 @@ crashlytics-build.properties
 .DS_Store
 Thumbs.db
 
-# Builds / Steam
+# Builds / Steam / CI
+Builds/
+[Bb]uild/
 *.exe
 *.x86_64
 *.app
 Steamworks.NET*/
 steam_appid.txt
+unity-test-results/

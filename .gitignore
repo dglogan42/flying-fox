@@ -50,11 +50,13 @@ unity/[Tt]emp/
 unity/[Oo]bj/
 unity/[Bb]uild/
 unity/[Bb]uilds/
+unity/Builds/
 unity/[Ll]ogs/
 unity/[Uu]ser[Ss]ettings/
 unity/*.csproj
 unity/*.sln
 unity/steam_appid.txt
+unity-test-results/
 
 # Caches
 .cache/

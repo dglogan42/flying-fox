@@ -22,6 +22,8 @@ Open `unity/` in **Unity Hub** (Unity 6 LTS preferred). See [`unity/README.md`](
 
 **First playable (PR-07):** open `unity/Assets/_Project/Scenes/Game.unity` → Play. Hex map + Classic run via `RunController` (LMB place, RMB pan, R rotate).
 
+**Build pipeline:** [docs/BUILD_PIPELINE.md](docs/BUILD_PIPELINE.md) — GitHub Actions (Core CI always; Unity tests/builds with license secrets) + local `unity/Tools/build.sh`.
+
 ---
 
 ## Features

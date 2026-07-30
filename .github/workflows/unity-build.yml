@@ -1,0 +1,70 @@
+name: Unity Player Build
+
+# Builds Windows (and optionally Linux) players via game-ci.
+# Requires the same UNITY_* secrets as unity-tests.yml.
+#
+# Manual: Actions → Unity Player Build → Run workflow
+# Artifacts download from the run summary.
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Build target"
+        required: true
+        default: standaloneWindows64
+        type: choice
+        options:
+          - standaloneWindows64
+          - standaloneLinux64
+          - webgl
+      defines:
+        description: "Extra scripting defines (e.g. FF_STEAM or FF_DEMO)"
+        required: false
+        default: ""
+
+concurrency:
+  group: unity-build-${{ github.ref }}-${{ github.event.inputs.target }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build ${{ github.event.inputs.target }}
+    runs-on: ubuntu-latest
+    if: ${{ secrets.UNITY_LICENSE != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Library
+        uses: actions/cache@v4
+        with:
+          path: unity/Library
+          key: Library-ff-build-${{ hashFiles('unity/Packages/manifest.json', 'unity/ProjectSettings/ProjectVersion.txt') }}
+          restore-keys: |
+            Library-ff-build-
+            Library-ff-
+
+      - name: Build player
+        id: build
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          projectPath: unity
+          unityVersion: 6000.0.0f1
+          targetPlatform: ${{ github.event.inputs.target }}
+          buildName: FlyingFox
+          buildsPath: build
+          # Custom method optional — game-ci default build is fine;
+          # define symbols via allowDirtyBuild + player settings when ready.
+          allowDirtyBuild: true
+          customParameters: ${{ github.event.inputs.defines != '' && format('-buildTarget {0}', github.event.inputs.target) || '' }}
+
+      - name: Upload build
+        uses: actions/upload-artifact@v4
+        with:
+          name: FlyingFox-${{ github.event.inputs.target }}
+          path: build
+          if-no-files-found: error

@@ -1,0 +1,20 @@
+{
+  "name": "FlyingFox.Editor",
+  "rootNamespace": "FlyingFox.EditorTools",
+  "references": [
+    "FlyingFox.Core",
+    "FlyingFox.Presentation",
+    "FlyingFox.App"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

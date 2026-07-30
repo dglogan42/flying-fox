@@ -10,8 +10,13 @@ Living list. Design: [design/STEAM_V1_DESIGN.md](design/STEAM_V1_DESIGN.md).
 
 ## Build
 
-- [ ] Unity LTS pinned in `unity/ProjectSettings/ProjectVersion.txt`
-- [ ] Windows x64 player builds clean
+See [BUILD_PIPELINE.md](BUILD_PIPELINE.md).
+
+- [ ] Unity LTS pinned in `unity/ProjectSettings/ProjectVersion.txt` (+ matching game-ci `unityVersion`)
+- [ ] `bash Tools/ci-verify-core.sh` green
+- [ ] Local `unity/Tools/build.sh windows` succeeds
+- [ ] GitHub secrets `UNITY_LICENSE` / `UNITY_EMAIL` / `UNITY_PASSWORD` for CI Unity jobs
+- [ ] Windows x64 player builds clean (Actions artifact or local Builds/)
 - [ ] Optional: Linux for Deck
 - [ ] `FF_STEAM` define on Steam depot; off for offline debug
 - [ ] `FF_DEMO` depot for Classic-only demo

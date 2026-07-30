@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  core-verify:
+    name: Core compile + smoke
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Verify Core
+        run: bash Tools/ci-verify-core.sh
+
+      - name: Check required Unity paths
+        run: |
+          set -e
+          test -f unity/Assets/_Project/Scenes/Game.unity
+          test -f unity/Assets/_Project/Scripts/Core/FlyingFox.Core.asmdef
+          test -f unity/Assets/_Project/Scripts/Presentation/GameSession.cs
+          test -f unity/Assets/_Project/Scripts/App/GameBootstrap.cs
+          test -f unity/Assets/_Project/Scripts/Editor/BuildScript.cs
+          test -f unity/Tools/build.sh
+          echo "OK layout"
+
+  extension-static:
+    name: Web / extension static check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate manifest + JS syntax
+        run: |
+          python3 -c "import json; json.load(open('manifest.json')); print('manifest ok')"
+          node --check game.js
+          node --check background.js
+          test -f index.html && test -f styles.css
+          echo "OK web extension"
