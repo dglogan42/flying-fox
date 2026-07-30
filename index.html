@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <meta name="theme-color" content="#1a3a2a" />
+  <meta name="description" content="Flying Fox — a cozy tile-laying deckbuilder" />
+  <title>Flying Fox</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" href="icons/icon-48.png" />
+</head>
+<body>
+  <div id="app">
+    <header id="top-bar">
+      <div class="brand">
+        <span class="logo" aria-hidden="true">🦊</span>
+        <div>
+          <h1>Flying Fox</h1>
+          <p class="subtitle">Canopy deckbuilder</p>
+        </div>
+      </div>
+      <div class="stats">
+        <div class="stat" title="Score">
+          <span class="stat-label">Score</span>
+          <span id="score" class="stat-value">0</span>
+        </div>
+        <div class="stat" title="Tiles left in deck">
+          <span class="stat-label">Deck</span>
+          <span id="deck-count" class="stat-value">0</span>
+        </div>
+        <div class="stat" title="Tiles placed">
+          <span class="stat-label">Placed</span>
+          <span id="placed-count" class="stat-value">0</span>
+        </div>
+      </div>
+    </header>
+
+    <main id="stage">
+      <canvas id="map" width="900" height="560" aria-label="Hex map"></canvas>
+      <div id="map-hint">Drag to pan · Scroll to zoom · R rotates tile</div>
+    </main>
+
+    <aside id="quests-panel">
+      <h2>Quests</h2>
+      <ul id="quest-list"></ul>
+    </aside>
+
+    <footer id="hand-bar">
+      <div class="hand-meta">
+        <p id="hand-hint">Pick a tile, rotate, then click a glowing hex to place it.</p>
+        <div class="hand-actions">
+          <button type="button" id="btn-rotate" title="Rotate (R)">↻ Rotate</button>
+          <button type="button" id="btn-cycle" title="Cycle hand order">⇄ Cycle</button>
+          <button type="button" id="btn-new" class="secondary">New run</button>
+        </div>
+      </div>
+      <div id="hand" class="hand" role="listbox" aria-label="Tile hand"></div>
+    </footer>
+
+    <div id="title-screen" class="overlay">
+      <div class="card">
+        <div class="fox-hero" aria-hidden="true">🦊</div>
+        <h2>Flying Fox</h2>
+        <p class="tagline">A cozy tile-laying deckbuilder.<br />Grow tiny forest islands for a fox to call home.</p>
+        <ul class="how">
+          <li><strong>Draw</strong> tiles from your deck into a hand of 3</li>
+          <li><strong>Rotate</strong> &amp; place them so edges match</li>
+          <li><strong>Complete quests</strong> for big scores before the deck runs out</li>
+        </ul>
+        <button type="button" id="btn-start" class="primary">Start run</button>
+        <p class="best" id="best-title">Best: 0</p>
+      </div>
+    </div>
+
+    <div id="end-screen" class="overlay hidden">
+      <div class="card">
+        <h2 id="end-title">Canopy complete</h2>
+        <p class="final-score">Score: <span id="final-score">0</span></p>
+        <p class="best" id="best-end">Best: 0</p>
+        <p class="medal" id="medal"></p>
+        <ul id="end-breakdown" class="breakdown"></ul>
+        <button type="button" id="btn-again" class="primary">Another run</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>

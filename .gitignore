@@ -1,0 +1,60 @@
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Editors / IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+*.sublime-project
+*.sublime-workspace
+
+# Logs & debug
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Dependencies (if added later)
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# Build / package artifacts
+dist/
+build/
+*.xpi
+web-ext-artifacts/
+.web-extension-id
+
+# Packaged extension zip (regenerate with zip command in README)
+flying-fox-firefox.zip
+
+# Caches
+.cache/
+.parcel-cache/
+.eslintcache
+*.tsbuildinfo
+
+# Test / coverage
+coverage/
+.nyc_output/
+
+# Local scratch
+*.tmp
+*.temp
+.local/
