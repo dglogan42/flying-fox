@@ -5,7 +5,7 @@
 | **Document title** | Flying Fox Steam v1 — Product + Technical Design |
 | **Author** | David Logan (rights holder; Steam partner entity TBD before PR-20) |
 | **Date** | 2026-07-30 |
-| **Status** | Draft (rev 2 — review amendments) |
+| **Status** | Accepted (rev 3 — Daily best-of-day locked; Core scaffold started) |
 | **Source product** | Web + Firefox WebExtension at `/home/oem/flying-fox/` ([github.com/dglogan42/flying-fox](https://github.com/dglogan42/flying-fox)) |
 | **Target product** | Unity standalone on Steam ("v1") |
 | **Repo target** | `flying-fox-unity/` monorepo (new; web game remains separate) |
@@ -142,7 +142,11 @@ The core rules in `game.js` are small, deterministic, and already fun. Porting t
 | `2030-06-15` | `1709004978` |
 
 4. **PRNG:** All deck generation for Daily (and Classic when replaying a seed) goes through `IRng` implemented as **`SplitMix64`** (public-domain algorithm; documented in `SplitMix64Rng.cs` comments). **Do not** use `string.GetHashCode()`, `System.Random` default constructor, or .NET-version-dependent algorithms for Daily. `IRng.Reseed(seed)` zeros/sets state from the `int` seed (sign-extend to `ulong` as `unchecked((ulong)(uint)seed)` then mix once).
-5. **Golden deck fixtures:** EditMode tests publish at least 3 dates → seed → first 5 tile edge arrays after `DeckFactory.Build` (presets + RNG fill + shuffle using only `IRng`). Fixtures live under `Assets/Tests/EditMode/Fixtures/DailySeeds.json`.
+5. **`IRng` contract (frozen):**
+   - `Next(minInclusive, maxExclusive)` — uniform over `[min, max)`; empty range throws. Implementation uses upper 32 bits of SplitMix64 output with multiplication high-bits (no modulo bias for non-power-of-two ranges when using 32-bit multiply; document rejection if range is huge).
+   - `NextFloat()` — uniform in `[0, 1)` via `(NextULong() >> 40) * (1f / 2^24)` (24-bit mantissa).
+   - **DeckFactory call order** (must not change without new golden fixtures): for each random tile after presets: `NextFloat()` once for mode branch; then `Next` / `NextFloat` only as required by that branch (same order as web `randomEdges`); then Fisher–Yates shuffle from end with `Next(0, i+1)` per swap.
+6. **Golden deck fixtures:** EditMode tests publish at least 3 dates → seed → first 5 tile edge arrays after `DeckFactory.Build` (presets + RNG fill + shuffle using only `IRng`). Fixtures live under `Assets/Tests/EditMode/Fixtures/DailySeeds.json`.
 
 **Daily run rules (locked — multi-attempt best-of-day):**
 
@@ -646,11 +650,15 @@ On-screen **Rotate** and **Cycle** buttons remain in the HUD for discoverability
 
 Applied by `ProfileService.ApplyRunResult(RunResult r)`:
 
-1. If `r.IsPractice` → **return immediately** (no mutations except optional local UI history not in profile).
+1. If `r.Mode == DailyPractice` or `r.IsPractice` → **return immediately** (no profile / achievement mutations).
 2. Increment `runsCompleted`; if `!r.NaturalEnd` also `runsAbandoned++`.
 3. Add run totals into lifetime counters (`tilesPlaced`, `perfectPlacements`, `edgeMatches`, `questsCompleted`).
 4. If `r.Mode == Classic` and `r.Score > bestClassic` → update `bestClassic`.
-5. If `r.Mode == Daily` and scored: update streak; if `r.Score > bestByDate[date]` update map; set `bestDaily = max(bestDaily, r.Score)`; `dailyScoredFinishes++` on every scored Daily finish.
+5. If `r.Mode == Daily` (scored):
+   - Let `D = r.UtcDate` (`yyyy-MM-dd`).
+   - **Streak:** if `lastScoredUtcDate != D` → apply first-of-day streak rules, then set `lastScoredUtcDate = D`.
+   - **Best of day:** if no `bestByDate[D]` or `r.Score > bestByDate[D]` → write `bestByDate[D] = r.Score`; set `bestDaily = max(bestDaily, r.Score)`.
+   - `dailyScoredFinishes++` on **every** scored Daily finish (including same-day replays).
 6. Update `highestMedal` if `medalFor(r.Score)` is higher.
 7. If `r.Score >= 400` → `goldenFoxCount++`.
 8. Run `UnlockEvaluator` then queue achievement events via `IRunStatsSink` / gateway.
@@ -706,7 +714,7 @@ Keep conditions transparent in Collection UI (“How to unlock”).
 - **Fox:** Single base sprite + 2 recolors/accessories as skins.
 - **VFX:** Place pulse (web `lastPlace` scale anim), score floater, quest checkmark burst.
 - **Avoid:** Photoreal leaves, particle soup that tanks Steam Deck.
-- **Placeholder ship:** Public demo may use greybox tiles + placeholder fox if PR-17b (min art bar) not ready; store **screenshots/trailer must wait** for min art bar (see roadmap).
+- **Placeholder ship:** Public demo may use greybox tiles + placeholder fox if **PR-17a** (min art bar) not ready; store **screenshots/trailer must wait** for PR-17a (see roadmap).
 
 ### Audio pipeline
 
@@ -1269,7 +1277,7 @@ Ordered, independently reviewable PRs for monorepo `flying-fox-unity/`. Each PR 
 | **Title** | `feat(mode): Daily UTC seed runs, scored vs practice, streak` |
 | **Components** | Mode select UI, practice banner, profile daily section integration, tests |
 | **Depends on** | PR-03b, PR-06, PR-11 |
-| **Description** | Wire `DailySeed` + scored/practice; streak; menu today status; practice grants nothing. |
+| **Description** | Wire `DailySeed` + multi-attempt best-of-day; first-of-day streak; optional Practice mode; menu today status. |
 
 ---
 
