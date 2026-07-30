@@ -3,7 +3,7 @@
   "name": "Flying Fox",
   "version": "2.0.0",
   "description": "A cozy tile-laying deckbuilder — grow forest islands for a fox to call home.",
-  "homepage_url": "https://github.com/local/flying-fox",
+  "homepage_url": "https://github.com/dglogan42/flying-fox",
   "browser_specific_settings": {
     "gecko": {
       "id": "flying-fox@local.dev",

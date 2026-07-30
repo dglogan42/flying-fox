@@ -5,6 +5,8 @@ Draw tiles from a deck, rotate them, and grow a hex island of forest, meadow, wa
 
 Ships as a **standalone web game** and a **Firefox extension** (no build step, no dependencies).
 
+**Repository:** [github.com/dglogan42/flying-fox](https://github.com/dglogan42/flying-fox)
+
 ![License: MIT](https://img.shields.io/badge/license-MIT-green)
 ![Platform: Web / Firefox](https://img.shields.io/badge/platform-Web%20%7C%20Firefox-orange)
 
