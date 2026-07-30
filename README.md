@@ -20,6 +20,8 @@ Ships as a **standalone web game** and a **Firefox extension** (no build step, n
 
 Open `unity/` in **Unity Hub** (Unity 6 LTS preferred). See [`unity/README.md`](unity/README.md).
 
+**First playable (PR-07):** open `unity/Assets/_Project/Scenes/Game.unity` → Play. Hex map + Classic run via `RunController` (LMB place, RMB pan, R rotate).
+
 ---
 
 ## Features
