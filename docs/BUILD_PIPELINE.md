@@ -8,6 +8,7 @@
 | **Unity EditMode** (`unity-tests.yml`) | Unity path changes + manual | **Yes** (secrets) | Runs `CoreParityTests` via [game-ci](https://game.ci) |
 | **Unity Player** (`unity-build.yml`) | Manual (workflow_dispatch) | **Yes** | Windows / Linux / WebGL player artifacts |
 | **Local scripts** | Dev machine | Local Editor install | `unity/Tools/build.sh`, `run-editmode-tests.sh` |
+| **Android China sideload** | Local (sideload APK) | Local Editor + Android module | **All CN tablets/phones, not Google Play** — [ANDROID_CHINA_SIDELOAD.md](ANDROID_CHINA_SIDELOAD.md) |
 | **Nintendo Switch** | Licensed machine only | **NintendoSDK** (NDA) | See [SWITCH_ESHP.md](SWITCH_ESHP.md); `Tools/build-switch.sh` |
 
 ```
@@ -44,6 +45,10 @@ chmod +x Tools/build.sh Tools/run-editmode-tests.sh
 # WebGL
 ./Tools/build.sh webgl
 
+# Android China sideload — all CN tablets/phones, excluded from Google Play
+./Tools/build.sh android-china
+# → unity/Builds/Android-China/FlyingFox-China.apk
+
 # With scripting define (Steam / demo)
 FF_DEFINES=FF_STEAM ./Tools/build.sh windows
 FF_DEFINES=FF_DEMO ./Tools/build.sh windows
@@ -52,7 +57,8 @@ FF_DEFINES=FF_DEMO ./Tools/build.sh windows
 UNITY_PATH="$HOME/Unity/Hub/Editor/6000.0.xxf1/Editor/Unity" ./Tools/build.sh windows
 ```
 
-Menu alternative (Editor open): **Flying Fox → Build → Windows x64**.
+Menu alternative (Editor open): **Flying Fox → Build → Windows x64**  
+or **Flying Fox → Build → Android China Sideload APK (no Google Play)**.
 
 ### EditMode tests
 
@@ -98,6 +104,7 @@ Without secrets, Unity workflows **skip** (`if: secrets.UNITY_LICENSE != ''`); C
 | `unity/Builds/Windows/` | Windows player |
 | `unity/Builds/Linux/` | Linux player |
 | `unity/Builds/WebGL/` | WebGL |
+| `unity/Builds/Android-China/` | China sideload APK — all CN tablets/phones (no Google Play) |
 | `unity/Builds/logs/` | Local batch logs |
 | `unity/Builds/TestResults/` | Local NUnit XML |
 | GitHub Actions artifacts | Uploaded player / test results |
@@ -111,6 +118,9 @@ Without secrets, Unity workflows **skip** (`if: secrets.UNITY_LICENSE != ''`); C
 | *(none)* | Offline / store-agnostic player |
 | `FF_STEAM` | Steamworks init path (when package wired) |
 | `FF_DEMO` | Classic-only demo strip (design) |
+| `FF_CHINA_SIDELOAD` | Generic China sideload channel (all CN tablets/phones) |
+| `FF_NO_GPLAY` | No Google Play / GMS (set with China sideload build) |
+| `FF_XIAOXIN` | Legacy alias; same as China sideload when set |
 
 Pass via `FF_DEFINES` for local CLI or set in **Player Settings** for Editor builds.
 
@@ -134,4 +144,5 @@ Pass via `FF_DEFINES` for local CLI or set in **Player Settings** for Editor bui
 
 - [STEAM_V1_DESIGN.md](design/STEAM_V1_DESIGN.md) — product/PR plan  
 - [STEAM_CHECKLIST.md](STEAM_CHECKLIST.md) — ship checklist  
+- [ANDROID_CHINA_SIDELOAD.md](ANDROID_CHINA_SIDELOAD.md) — China sideload APK (no Google Play)  
 - [unity/README.md](../unity/README.md) — open & play  

@@ -61,6 +61,9 @@ namespace FlyingFox.App
 
 #if UNITY_SWITCH || FF_SWITCH_SIM
             PlatformServices.Set(new SwitchPlatformServices());
+#elif FF_CHINA_SIDELOAD || FF_XIAOXIN
+            // Generic China sideload APK — all tablets/phones, no Google Play
+            PlatformServices.Set(new ChinaSideloadPlatformServices());
 #else
             PlatformServices.Set(new DesktopPlatformServices());
 #endif

@@ -7,6 +7,8 @@
 | Unity Editor / runtime | Unity Terms | Player license per Unity policy |
 | Steamworks.NET | MIT-style (check package) | Steam build only |
 | Steamworks SDK | Valve NDA / SDK terms | Partner account |
+| Android SDK / NDK | Google / Android SDK license | Local tools for China sideload APK (**not** Google Play) |
+| OpenJDK (Temurin 17) | GPLv2 + Classpath | Build-time only for Android Gradle |
 
 ## Algorithms
 

@@ -71,4 +71,45 @@ namespace FlyingFox.Platform
 #endif
         }
     }
+
+    /// <summary>
+    /// Generic China-market Android sideload channel for tablets and phones
+    /// (Xiaoxin, Huawei, Xiaomi, Oppo, Vivo, Honor, etc.).
+    /// No Google Play, no GMS, no Play Billing — APK install only.
+    /// Active when built with <c>FF_CHINA_SIDELOAD</c> (or legacy <c>FF_XIAOXIN</c>).
+    /// </summary>
+    public sealed class ChinaSideloadPlatformServices : IPlatformServices
+    {
+        public string PlatformId =>
+#if FF_CHINA_SIDELOAD || FF_XIAOXIN
+            "china-sideload";
+#else
+            "china-sideload-sim";
+#endif
+
+        /// <summary>Touch-first; gamepad still works via Unity Input if present.</summary>
+        public bool SupportsGamepadCursor => false;
+
+        public void Init()
+        {
+            // Offline-first: local storage only. No Google Play, GMS, or Play Billing.
+            // Safe on pure AOSP / OEM ROMs without GMS (common in mainland China).
+        }
+
+        public void Shutdown() { }
+
+        public bool ConfirmQuitOrAbandon(string message) => true;
+    }
+
+    /// <summary>Obsolete name — use <see cref="ChinaSideloadPlatformServices"/>.</summary>
+    [System.Obsolete("Use ChinaSideloadPlatformServices (generic China sideload APK).")]
+    public sealed class XiaoxinProPlatformServices : IPlatformServices
+    {
+        readonly ChinaSideloadPlatformServices _inner = new ChinaSideloadPlatformServices();
+        public string PlatformId => _inner.PlatformId;
+        public bool SupportsGamepadCursor => _inner.SupportsGamepadCursor;
+        public void Init() => _inner.Init();
+        public void Shutdown() => _inner.Shutdown();
+        public bool ConfirmQuitOrAbandon(string message) => _inner.ConfirmQuitOrAbandon(message);
+    }
 }

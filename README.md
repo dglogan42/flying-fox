@@ -26,6 +26,8 @@ Open `unity/` in **Unity Hub** (Unity 6 LTS preferred). See [`unity/README.md`](
 
 **Nintendo Switch (eShop):** [docs/SWITCH_ESHP.md](docs/SWITCH_ESHP.md) — store listing draft, cert checklist, gamepad cursor. Real NSP requires NintendoSDK (not public).
 
+**Android China sideload (no Google Play):** [docs/ANDROID_CHINA_SIDELOAD.md](docs/ANDROID_CHINA_SIDELOAD.md) — generic APK for Chinese tablets & phones (`./Tools/build.sh android-china`).
+
 ---
 
 ## Features

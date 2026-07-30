@@ -4,6 +4,7 @@
 #   ./Tools/build.sh windows
 #   ./Tools/build.sh linux
 #   ./Tools/build.sh webgl
+#   ./Tools/build.sh android-china     # China sideload APK (all CN tablets/phones, no Play)
 #   ./Tools/build.sh all
 #   FF_DEFINES=FF_STEAM ./Tools/build.sh windows
 #   UNITY_PATH=/path/to/Unity ./Tools/build.sh windows
@@ -83,11 +84,23 @@ case "$TARGET" in
   webgl)
     run_build BuildWebGL
     ;;
+  android-china|china|china-sideload|cn|android|android-xiaoxin|xiaoxin|xiaoxin-pro)
+    # Generic China-market sideload APK — all tablets/phones, no Google Play
+    # See docs/ANDROID_CHINA_SIDELOAD.md
+    if [[ -f "$HOME/Android/env.sh" ]]; then
+      # shellcheck source=/dev/null
+      source "$HOME/Android/env.sh"
+    fi
+    export FF_DEFINES="${FF_DEFINES:+$FF_DEFINES;}FF_CHINA_SIDELOAD;FF_NO_GPLAY"
+    echo "==> Channel: China sideload (generic CN tablets/phones, no Google Play)"
+    echo "==> ANDROID_HOME=${ANDROID_HOME:-<unset>}"
+    run_build BuildAndroidChinaSideload
+    ;;
   all|desktop)
     run_build BuildAllDesktop
     ;;
   *)
-    echo "Unknown target: $TARGET (windows|linux|webgl|all)" >&2
+    echo "Unknown target: $TARGET (windows|linux|webgl|android-china|all)" >&2
     exit 2
     ;;
 esac
