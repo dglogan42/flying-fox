@@ -135,13 +135,33 @@ Working folder: `docs/store/switch/` (listing text + control card).
 | Phase | Work | Owner |
 |-------|------|--------|
 | **S0** | Register Nintendo developer; request Switch Unity support | You |
-| **S1** | Gamepad cursor + pause + safe-area HUD (in repo) | Engineering |
+| **S1** | Gamepad cursor + **pause menu** + **dock/undock UI scale** (in repo) | Engineering |
 | **S2** | NX save wrapper, sleep/dock handlers | Engineering + SDK |
 | **S3** | Art bar + trailer + IARC | Creative |
 | **S4** | Lotcheck master → submission | You + QA |
 | **S5** | Release / patch pipeline | You |
 
-**S1 is implemented in this repo** as Switch-ready controls and docs. S2–S5 need Nintendo SDK access.
+**S1 is implemented in this repo:**
+
+| Feature | Types |
+|---------|--------|
+| Gamepad hex cursor | `SwitchCursorController` |
+| Pause (+ / Esc / Start) | `PauseMenuController` — timeScale 0, resume / new / abandon confirm / controls |
+| Dock ↔ undock UI | `DisplayModeService` — form factor, safe area + TV overscan, font scale, ortho base |
+| Suspend / focus loss | Auto-pause on `OnApplicationPause` / focus loss |
+
+S2–S5 need Nintendo SDK access.
+
+### Simulate dock / undock in Editor
+
+Resize the Game view:
+
+| Approx size | Mode |
+|-------------|------|
+| ≤1280×800 | **Handheld** (UI scale 1.0, tighter ortho) |
+| ≥1600×900 | **Docked / Desktop** (UI scale ~1.1–1.28, TV overscan margin) |
+
+Pause shows current form factor and resolution.
 
 ---
 

@@ -35,6 +35,13 @@ namespace FlyingFox.Presentation
 
         public void SetPanBlocked(bool blocked) => _blockPan = blocked;
 
+        /// <summary>Docked vs handheld base ortho (player zoom still applies on top).</summary>
+        public void SetBaseOrthoSize(float baseOrtho)
+        {
+            _baseOrthoSize = Mathf.Max(2f, baseOrtho);
+            ApplyZoom();
+        }
+
         public void FocusWorld(Vector3 world, bool instant = true)
         {
             var p = transform.position;
@@ -56,6 +63,11 @@ namespace FlyingFox.Presentation
 
         void Update()
         {
+            if (PauseMenuController.IsPaused || _blockPan)
+            {
+                _dragging = false;
+                return;
+            }
             HandleZoom();
             HandlePan();
         }

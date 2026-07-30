@@ -5,8 +5,7 @@ using UnityEngine;
 namespace FlyingFox.Presentation
 {
     /// <summary>
-    /// Temporary OnGUI HUD until UI Toolkit (PR-09). Full Classic run + end screen.
-    /// Exposes <see cref="IsPointerOverHud"/> so map input ignores UI clicks.
+    /// Temporary OnGUI HUD until UI Toolkit (PR-09). Scales for docked vs handheld.
     /// </summary>
     public sealed class GameplayHudImgui : MonoBehaviour
     {
@@ -20,9 +19,8 @@ namespace FlyingFox.Presentation
         GUIStyle _muted;
         GUIStyle _btn;
         GUIStyle _btnPrimary;
-        GUIStyle _panel;
         GUIStyle _questDone;
-        bool _styles;
+        float _styleScale = -1f;
         Rect _panelRect;
 
         public void Bind(RunController run, int seed = 0)
@@ -32,41 +30,43 @@ namespace FlyingFox.Presentation
             _cachedEnd = null;
         }
 
-        void EnsureStyles()
+        void EnsureStyles(float uiScale)
         {
-            if (_styles) return;
-            _styles = true;
+            if (_styleScale > 0f && Mathf.Abs(_styleScale - uiScale) < 0.01f && _title != null)
+                return;
+            _styleScale = uiScale;
+
+            int T(int v) => Mathf.Max(10, Mathf.RoundToInt(v * uiScale));
 
             _title = new GUIStyle(GUI.skin.label)
             {
-                fontSize = 22,
+                fontSize = T(22),
                 fontStyle = FontStyle.Bold,
                 normal = { textColor = new Color(0.96f, 0.64f, 0.38f) },
             };
             _body = new GUIStyle(GUI.skin.label)
             {
-                fontSize = 14,
+                fontSize = T(14),
                 normal = { textColor = new Color(0.99f, 0.98f, 0.88f) },
                 wordWrap = true,
             };
             _muted = new GUIStyle(GUI.skin.label)
             {
-                fontSize = 12,
+                fontSize = T(12),
                 normal = { textColor = new Color(0.56f, 0.7f, 0.6f) },
                 wordWrap = true,
             };
             _btn = new GUIStyle(GUI.skin.button)
             {
-                fontSize = 13,
+                fontSize = T(13),
                 fontStyle = FontStyle.Bold,
-                fixedHeight = 32,
+                fixedHeight = T(32),
             };
             _btnPrimary = new GUIStyle(_btn)
             {
-                fontSize = 15,
-                fixedHeight = 40,
+                fontSize = T(15),
+                fixedHeight = T(40),
             };
-            _panel = new GUIStyle(GUI.skin.box);
             _questDone = new GUIStyle(_body)
             {
                 normal = { textColor = new Color(0.96f, 0.64f, 0.38f) },
@@ -75,41 +75,59 @@ namespace FlyingFox.Presentation
 
         void OnGUI()
         {
-            if (_run == null)
+            if (_run == null || PauseMenuController.IsPaused)
             {
                 IsPointerOverHud = false;
                 return;
             }
 
-            EnsureStyles();
+            float ui = DisplayModeService.Instance != null
+                ? DisplayModeService.Instance.UiScale
+                : 1f;
+            EnsureStyles(ui);
 
-            const float pad = 10f;
-            const float width = 340f;
-            float height = Screen.height - pad * 2f;
-            _panelRect = new Rect(pad, pad, width, height);
+            Rect safe = DisplayModeService.Instance != null
+                ? DisplayModeService.Instance.SafeGuiRect
+                : new Rect(0, 0, Screen.width, Screen.height);
 
-            // Soft panel background
+            float pad = 10f * ui;
+            float width = Mathf.Clamp(340f * ui, 260f, safe.width * 0.42f);
+            // Handheld: slightly wider fraction so text fits
+            if (DisplayModeService.Instance != null &&
+                DisplayModeService.Instance.FormFactor == DisplayFormFactor.Handheld)
+                width = Mathf.Clamp(300f * ui, 240f, safe.width * 0.48f);
+
+            float height = safe.height - pad * 2f;
+            _panelRect = new Rect(safe.x + pad, safe.y + pad, width, height);
+
             Color prev = GUI.color;
             GUI.color = new Color(0.05f, 0.1f, 0.07f, 0.88f);
             GUI.Box(_panelRect, GUIContent.none);
             GUI.color = prev;
 
-            GUILayout.BeginArea(new Rect(pad + 8f, pad + 8f, width - 16f, height - 16f));
+            GUILayout.BeginArea(new Rect(
+                _panelRect.x + 8f * ui,
+                _panelRect.y + 8f * ui,
+                _panelRect.width - 16f * ui,
+                _panelRect.height - 16f * ui));
 
             GUILayout.Label("🦊 Flying Fox", _title);
-            GUILayout.Label("Classic canopy run", _muted);
+            string mode = "Classic canopy run";
+            if (DisplayModeService.Instance != null)
+                mode += $" · {DisplayModeService.Instance.FormFactor}";
+            GUILayout.Label(mode, _muted);
             if (_seed != 0)
                 GUILayout.Label($"Seed {_seed}", _muted);
 
-            GUILayout.Space(6);
+            GUILayout.Space(6 * ui);
             DrawStat("Score", _run.Score.ToString());
             DrawStat("Deck", _run.Deck.Count.ToString());
             DrawStat("Placed", _run.PlacedHandTiles.ToString());
             DrawStat("Board", $"{_run.Board.Count} tiles");
             if (_run.AnchorArmed)
-                GUILayout.Label("⚓ Anchor ARMED — soft perfect next", _title);
+                GUILayout.Label("⚓ Anchor ARMED", _title);
 
-            GUILayout.Space(6);
+            GUILayout.Space(6 * ui);
             GUILayout.Label("Fox abilities", _title);
             GUILayout.Label("🌲 Canopy Leap  +6 / Forest match", _muted);
             GUILayout.Label("☀️ Sunbeam  +15 perfect + Meadow", _muted);
@@ -121,16 +139,15 @@ namespace FlyingFox.Presentation
                     GUILayout.Label($"→ {p.Name}: {p.Detail}", _body);
             }
 
-            GUILayout.Space(10);
+            GUILayout.Space(10 * ui);
 
             if (_run.Phase == RunPhase.Playing)
-                DrawPlaying();
+                DrawPlaying(ui);
             else if (_run.Phase == RunPhase.Ended)
                 DrawEnded();
 
             GUILayout.EndArea();
 
-            // IMGUI mouse is top-left origin
             Vector2 guiMouse = Event.current != null
                 ? Event.current.mousePosition
                 : new Vector2(Input.mousePosition.x, Screen.height - Input.mousePosition.y);
@@ -140,26 +157,24 @@ namespace FlyingFox.Presentation
         void DrawStat(string label, string value)
         {
             GUILayout.BeginHorizontal();
-            GUILayout.Label(label, _muted, GUILayout.Width(70));
+            GUILayout.Label(label, _muted, GUILayout.Width(70 * (_styleScale > 0 ? _styleScale : 1f)));
             GUILayout.Label(value, _body);
             GUILayout.EndHorizontal();
         }
 
-        void DrawPlaying()
+        void DrawPlaying(float ui)
         {
             GUILayout.Label("Hand", _title);
-            GUILayout.Label("1–3 select · R/Q rotate · Tab cycle", _muted);
+            GUILayout.Label("1–3 select · R/Q rotate · Tab cycle · + pause", _muted);
 
             GUILayout.BeginHorizontal();
             for (int i = 0; i < _run.Hand.Count; i++)
             {
                 var t = _run.Hand[i];
                 bool sel = i == _run.SelectedHandIndex;
-                string label = sel
-                    ? $"▸ {EdgesShort(t.Edges)}"
-                    : $"  {EdgesShort(t.Edges)}";
+                string label = sel ? $"▸ {EdgesShort(t.Edges)}" : $"  {EdgesShort(t.Edges)}";
                 var style = sel ? _btnPrimary : _btn;
-                if (GUILayout.Button(label, style, GUILayout.Height(sel ? 44 : 36)))
+                if (GUILayout.Button(label, style, GUILayout.Height(sel ? 44 * ui : 36 * ui)))
                     _run.SelectHand(i);
             }
             GUILayout.EndHorizontal();
@@ -170,13 +185,15 @@ namespace FlyingFox.Presentation
             GUILayout.EndHorizontal();
 
             GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Pause", _btn))
+                PauseMenuController.Instance?.Pause();
             if (GUILayout.Button("New run", _btn))
                 GameSession.Instance?.StartClassicRun();
             if (GUILayout.Button("End run", _btn))
                 _run.Abandon();
             GUILayout.EndHorizontal();
 
-            GUILayout.Space(12);
+            GUILayout.Space(12 * ui);
             GUILayout.Label("Quests", _title);
             foreach (var q in _run.Quests)
             {
@@ -185,8 +202,7 @@ namespace FlyingFox.Presentation
                 GUILayout.Label($"{mark} {q.Def.Title}", style);
                 GUILayout.Label($"   {q.Progress}/{q.Def.Target}  ·  +{q.Def.Reward} pts", _muted);
 
-                // Simple progress bar
-                Rect r = GUILayoutUtility.GetRect(18, 8);
+                Rect r = GUILayoutUtility.GetRect(18, 8 * ui);
                 r.xMin += 12;
                 Color c = GUI.color;
                 GUI.color = new Color(0.05f, 0.08f, 0.06f, 1f);
@@ -205,9 +221,8 @@ namespace FlyingFox.Presentation
 
             GUILayout.FlexibleSpace();
             GUILayout.Label(
-                "LMB place · RMB pan · Scroll zoom\n" +
-                "Gamepad: stick/D-pad aim · A place · B/Y rotate · X hand\n" +
-                "Esc abandon · Ctrl+N new run",
+                "LMB place · gamepad A place · + / Esc pause\n" +
+                "Dock/undock rescales UI automatically",
                 _muted);
         }
 

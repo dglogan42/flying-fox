@@ -123,6 +123,12 @@ namespace FlyingFox.App
             cursorGo.transform.SetParent(root.transform, false);
             var cursor = cursorGo.AddComponent<SwitchCursorController>();
 
+            // ── Display mode (dock / undock) ───────────────
+            var displayGo = new GameObject("DisplayMode");
+            displayGo.transform.SetParent(root.transform, false);
+            var display = displayGo.AddComponent<DisplayModeService>();
+            display.ForceRefresh(true);
+
             // ── Session host ───────────────────────────────
             transform.SetParent(root.transform, false);
             gameObject.name = "GameSession";
@@ -131,13 +137,15 @@ namespace FlyingFox.App
                         ?? gameObject.AddComponent<MapInputController>();
             var hud = gameObject.GetComponent<GameplayHudImgui>()
                       ?? gameObject.AddComponent<GameplayHudImgui>();
+            var pause = gameObject.GetComponent<PauseMenuController>()
+                        ?? gameObject.AddComponent<PauseMenuController>();
             var session = gameObject.GetComponent<GameSession>()
                           ?? gameObject.AddComponent<GameSession>();
 
             session.Configure(_hexSize, _useDebugSeed, _debugSeed);
-            session.Wire(map, mapCam, ghost, input, hud, cursor);
+            session.Wire(map, mapCam, ghost, input, hud, cursor, pause, display);
 
-            Debug.Log("[FlyingFox] GameBootstrap ready — Classic run starts on GameSession.Start.");
+            Debug.Log("[FlyingFox] GameBootstrap ready — pause + dock/undock UI scale enabled.");
         }
     }
 }

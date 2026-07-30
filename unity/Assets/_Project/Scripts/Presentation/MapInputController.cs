@@ -59,6 +59,12 @@ namespace FlyingFox.Presentation
 
         void Update()
         {
+            if (PauseMenuController.IsPaused || PauseMenuController.IsPointerOverPause)
+            {
+                _ghost?.Hide();
+                return;
+            }
+
             if (!InputEnabled || _run == null || _camera == null || _map == null || _ghost == null)
                 return;
 
@@ -137,8 +143,7 @@ namespace FlyingFox.Presentation
                 _run.SelectHand(2);
             if (Input.GetKeyDown(KeyCode.N) && (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)))
                 GameSession.Instance?.StartClassicRun();
-            if (Input.GetKeyDown(KeyCode.Escape))
-                _run.Abandon();
+            // Escape / Start handled by PauseMenuController
 
             // Gamepad — Unity joystick button indices (common XInput / similar; Switch SDK remaps later)
             // A=0, B=1, X=2, Y=3, L=4, R=5, Select=6, Start=7
@@ -152,19 +157,16 @@ namespace FlyingFox.Presentation
             }
             if (GetJoyDown(1) || GetJoyDown(5)) // B or R — rotate CW
                 _run.RotateSelected(1);
-            if (GetJoyDown(3) || GetJoyDown(4)) // Y or L — rotate CCW / prev
-            {
-                if (GetJoyDown(3))
-                    _run.RotateSelected(-1);
-                if (GetJoyDown(4))
-                    _run.CycleHand(-1);
-            }
+            if (GetJoyDown(3)) // Y — rotate CCW
+                _run.RotateSelected(-1);
+            if (GetJoyDown(4)) // L — prev hand
+                _run.CycleHand(-1);
             if (GetJoyDown(2)) // X — cycle hand
                 _run.CycleHand(1);
-            if (GetJoyDown(7)) // Start/+
-                GameSession.Instance?.StartClassicRun();
-            if (GetJoyDown(6)) // Select/−
-                _run.Abandon();
+            // Start (7) → pause (PauseMenuController)
+            // Select (6) → abandon via pause menu confirm (avoid misclick)
+            if (GetJoyDown(6))
+                PauseMenuController.Instance?.Pause();
         }
 
         static bool GetJoyDown(int button)

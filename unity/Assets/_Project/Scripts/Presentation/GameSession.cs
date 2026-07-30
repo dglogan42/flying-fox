@@ -21,6 +21,8 @@ namespace FlyingFox.Presentation
         [SerializeField] MapInputController _input;
         [SerializeField] GameplayHudImgui _hud;
         [SerializeField] SwitchCursorController _cursor;
+        [SerializeField] PauseMenuController _pause;
+        [SerializeField] DisplayModeService _display;
 
         RunController _run;
         int _activeSeed;
@@ -34,6 +36,8 @@ namespace FlyingFox.Presentation
         void OnDisable()
         {
             if (Instance == this) Instance = null;
+            if (_display != null)
+                _display.FormFactorChanged -= OnDisplayModeChanged;
         }
 
         public void Wire(
@@ -42,7 +46,9 @@ namespace FlyingFox.Presentation
             GhostPlacementView ghost,
             MapInputController input,
             GameplayHudImgui hud,
-            SwitchCursorController cursor = null)
+            SwitchCursorController cursor = null,
+            PauseMenuController pause = null,
+            DisplayModeService display = null)
         {
             _map = map;
             _camera = camera;
@@ -50,6 +56,23 @@ namespace FlyingFox.Presentation
             _input = input;
             _hud = hud;
             _cursor = cursor;
+            _pause = pause;
+            _display = display;
+
+            if (_display != null)
+            {
+                _display.FormFactorChanged -= OnDisplayModeChanged;
+                _display.FormFactorChanged += OnDisplayModeChanged;
+                ApplyDisplayMode(_display.FormFactor);
+            }
+        }
+
+        public void SetGameplayInputEnabled(bool enabled)
+        {
+            if (_input != null)
+                _input.InputEnabled = enabled;
+            if (_camera != null)
+                _camera.SetPanBlocked(!enabled || PauseMenuController.IsPaused);
         }
 
         /// <summary>Called by <see cref="FlyingFox.App.GameBootstrap"/> before first Start.</summary>
@@ -71,7 +94,18 @@ namespace FlyingFox.Presentation
 
             ApplyHexSize();
             _camera.ConfigureFromBalance(GameBalance.WebParity);
+            if (_display != null)
+                ApplyDisplayMode(_display.FormFactor);
             StartClassicRun(_useDebugSeed ? _debugSeed : (int?)null);
+        }
+
+        void OnDisplayModeChanged(DisplayFormFactor form) => ApplyDisplayMode(form);
+
+        void ApplyDisplayMode(DisplayFormFactor form)
+        {
+            if (_camera == null || _display == null) return;
+            _camera.SetBaseOrthoSize(_display.RecommendedOrthoBase);
+            Debug.Log($"[FlyingFox] UI/camera for {form} orthoBase={_display.RecommendedOrthoBase}");
         }
 
         void ApplyHexSize()
@@ -101,8 +135,12 @@ namespace FlyingFox.Presentation
                 Balance = GameBalance.WebParity,
             }, new SplitMix64Rng(_activeSeed));
 
+            if (PauseMenuController.IsPaused)
+                _pause?.Resume();
+
             _input.Bind(_run, _camera, _map, _ghost, _cursor);
-            _input.InputEnabled = true;
+            _pause?.Bind(_run);
+            SetGameplayInputEnabled(true);
             _hud.Bind(_run, _activeSeed);
             _ghost.Hide();
             _camera.FocusWorld(Vector3.zero);
