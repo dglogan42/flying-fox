@@ -1,12 +1,13 @@
 namespace FlyingFox.Core
 {
-    /// <summary>Parity with game.js BIOME letters F/M/W/R.</summary>
+    /// <summary>Parity with game.js BIOME letters F/M/W/R/N.</summary>
     public enum BiomeId : byte
     {
-        Forest = 0, // F
-        Meadow = 1, // M
-        Water = 2,  // W
-        Rock = 3,   // R
+        Forest = 0,  // F
+        Meadow = 1,  // M
+        Water = 2,   // W
+        Rock = 3,    // R
+        Neutral = 4, // N — hub / wild; not dealt in deck
     }
 
     public static class BiomeCodec
@@ -17,6 +18,7 @@ namespace FlyingFox.Core
             BiomeId.Meadow => 'M',
             BiomeId.Water => 'W',
             BiomeId.Rock => 'R',
+            BiomeId.Neutral => 'N',
             _ => '?',
         };
 
@@ -26,6 +28,7 @@ namespace FlyingFox.Core
             'M' => BiomeId.Meadow,
             'W' => BiomeId.Water,
             'R' => BiomeId.Rock,
+            'N' => BiomeId.Neutral,
             _ => throw new System.ArgumentOutOfRangeException(nameof(c), c, "Unknown biome"),
         };
 
@@ -45,6 +48,19 @@ namespace FlyingFox.Core
             var a = new BiomeId[6];
             for (int i = 0; i < 6; i++) a[i] = FromChar(edges[i]);
             return a;
+        }
+
+        /// <summary>Neutral is wild — matches any biome.</summary>
+        public static bool EdgesMatch(BiomeId a, BiomeId b) =>
+            a == b || a == BiomeId.Neutral || b == BiomeId.Neutral;
+
+        /// <summary>Ability biome prefers the non-neutral side of a match.</summary>
+        public static bool TryAbilityBiome(BiomeId a, BiomeId b, out BiomeId ability)
+        {
+            if (a != BiomeId.Neutral) { ability = a; return true; }
+            if (b != BiomeId.Neutral) { ability = b; return true; }
+            ability = BiomeId.Neutral;
+            return false;
         }
     }
 }

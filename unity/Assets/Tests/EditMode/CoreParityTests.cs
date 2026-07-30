@@ -35,13 +35,19 @@ namespace FlyingFox.Core.Tests
         }
 
         [Test]
-        public void Placement_PerfectForest_Includes_CanopyLeap()
+        public void Hub_Is_All_Neutral()
+        {
+            foreach (var e in DeckFactory.HubEdges)
+                Assert.AreEqual(BiomeId.Neutral, e);
+        }
+
+        [Test]
+        public void Neutral_Wild_Matches_Forest_And_Grants_CanopyLeap()
         {
             var board = new BoardModel();
-            var hub = DeckFactory.HubEdges;
-            board.Place(new PlacedTile(HexCoord.Origin, 0, hub));
+            board.Place(new PlacedTile(HexCoord.Origin, 0, DeckFactory.HubEdges));
 
-            // Place east: contact hub edge 0 = Forest → 1 forest match → perfect
+            // Hub N is wild → any edge matches; player's F → Canopy Leap
             // base 2+12+20 + Canopy Leap +6 = 40
             var edges = BiomeCodec.FromChars('F', 'F', 'F', 'F', 'F', 'F');
             var at = HexCoord.Origin.Neighbor(0);
@@ -49,6 +55,7 @@ namespace FlyingFox.Core.Tests
             Assert.AreEqual(1, ev.Contacts);
             Assert.AreEqual(1, ev.Matches);
             Assert.IsTrue(ev.IsPerfect);
+            Assert.AreEqual(BiomeId.Forest, ev.MatchedBiomes[0]);
             Assert.AreEqual(2 + 12 + 20 + 6, PlacementService.ScoreFor(ev, GameBalance.WebParity));
         }
 

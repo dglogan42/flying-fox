@@ -12,6 +12,7 @@ namespace FlyingFox.Presentation
             BiomeId.Meadow => Hex("#b5c76a"),
             BiomeId.Water => Hex("#1d6a8a"),
             BiomeId.Rock => Hex("#6c757d"),
+            BiomeId.Neutral => Hex("#8a7a66"),
             _ => Color.magenta,
         };
 
@@ -21,6 +22,7 @@ namespace FlyingFox.Presentation
             BiomeId.Meadow => Hex("#d8e2a0"),
             BiomeId.Water => Hex("#4cc9f0"),
             BiomeId.Rock => Hex("#adb5bd"),
+            BiomeId.Neutral => Hex("#c4b5a0"),
             _ => Color.white,
         };
 

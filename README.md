@@ -28,7 +28,7 @@ Open `unity/` in **Unity Hub** (Unity 6 LTS preferred). See [`unity/README.md`](
 
 ## Features
 
-- Hex map with four biomes: **Forest**, **Meadow**, **Water**, **Rock**
+- Hex map biomes: **Forest**, **Meadow**, **Water**, **Rock**, plus **Neutral** den hub
 - **Deck of 36** tiles and a **hand of 3**
 - Edge-matching score plus **perfect placement** bonus
 - **Fox abilities** per biome (Canopy Leap, Sunbeam, Eddy, Anchor)
@@ -40,7 +40,7 @@ Open `unity/` in **Unity Hub** (Unity 6 LTS preferred). See [`unity/README.md`](
 
 ## How to play
 
-1. Start a run — you begin with a **fox den** hub tile.
+1. Start a run — you begin with a **neutral fox den** hub (wild edges; matches any biome).
 2. Draw tiles into a hand of three from the deck.
 3. **Select** a tile, **rotate** it, then **place** it on a glowing adjacent hex.
 4. Match edges with neighbors for points; perfect fits score a bonus.

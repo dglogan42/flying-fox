@@ -22,9 +22,9 @@ namespace FlyingFox.Core
             "WFFWWF",
         };
 
-        // Hub tile edges: ["F","F","M","M","W","F"]
+        // Hub tile — neutral den (wild edges); not dealt in deck
         public static readonly BiomeId[] HubEdges =
-            BiomeCodec.FromChars('F', 'F', 'M', 'M', 'W', 'F');
+            BiomeCodec.FromChars('N', 'N', 'N', 'N', 'N', 'N');
 
         public void ResetIds(int start = 1) => _nextId = start;
 

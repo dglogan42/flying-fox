@@ -15,10 +15,11 @@ namespace FlyingFox.Core
                 if (!board.TryGet(n, out var nt)) continue;
                 contacts++;
                 int theirEdge = HexCoord.OppositeEdge[e];
-                if (nt.Edges[theirEdge] == edges[e])
+                if (BiomeCodec.EdgesMatch(nt.Edges[theirEdge], edges[e]))
                 {
                     matches++;
-                    matched.Add(edges[e]);
+                    if (BiomeCodec.TryAbilityBiome(edges[e], nt.Edges[theirEdge], out var ab))
+                        matched.Add(ab);
                 }
                 else
                 {

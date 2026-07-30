@@ -7,6 +7,7 @@
     MEADOW: "M",
     WATER: "W",
     ROCK: "R",
+    NEUTRAL: "N",
   };
 
   const BIOME_COLOR = {
@@ -14,8 +15,11 @@
     M: { fill: "#b5c76a", edge: "#d8e2a0", label: "Meadow" },
     W: { fill: "#1d6a8a", edge: "#4cc9f0", label: "Water" },
     R: { fill: "#6c757d", edge: "#adb5bd", label: "Rock" },
+    // Den / start hex — warm stone, no fox ability
+    N: { fill: "#8a7a66", edge: "#c4b5a0", label: "Neutral" },
   };
 
+  /** Deck + ability biomes only (Neutral is hub/wild, not dealt). */
   const BIOME_LIST = ["F", "M", "W", "R"];
   const HAND_SIZE = 3;
   const HAND_MAX = 4; // Water Eddy can overdraw to 4
@@ -277,20 +281,33 @@
     return [...set.values()];
   }
 
+  /** Neutral (N) is wild: matches any edge. Used on the fox den hub. */
+  function edgesMatch(a, b) {
+    return a === b || a === "N" || b === "N";
+  }
+
+  /** Biome used for fox abilities — prefer the non-neutral side of a match. */
+  function abilityBiome(a, b) {
+    if (a !== "N") return a;
+    if (b !== "N") return b;
+    return "N";
+  }
+
   function evaluatePlacement(q, r, edges) {
     let matches = 0;
     let mismatches = 0;
     let contacts = 0;
-    const matchedBiomes = []; // biome letter per matched edge
+    const matchedBiomes = []; // playable biomes only (not Neutral)
     for (let e = 0; e < 6; e++) {
       const n = neighbor(q, r, e);
       const nt = map.get(key(n.q, n.r));
       if (!nt) continue;
       contacts++;
       const theirEdge = nt.edges[OPPOSITE[e]];
-      if (theirEdge === edges[e]) {
+      if (edgesMatch(theirEdge, edges[e])) {
         matches++;
-        matchedBiomes.push(edges[e]);
+        const ab = abilityBiome(edges[e], theirEdge);
+        if (ab !== "N") matchedBiomes.push(ab);
       } else {
         mismatches++;
       }
@@ -875,8 +892,8 @@
     lastAbilityProcs = [];
     showAbilityToast([]);
 
-    // starter tile — cozy forest hub
-    const hub = makeTile(["F", "F", "M", "M", "W", "F"]);
+    // starter tile — neutral fox den (wild edges; no biome ability of its own)
+    const hub = makeTile(["N", "N", "N", "N", "N", "N"]);
     map.set(key(0, 0), { q: 0, r: 0, edges: hub.edges, id: hub.id });
     placed = 1;
 

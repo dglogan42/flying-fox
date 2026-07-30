@@ -80,11 +80,11 @@ namespace FlyingFox.Presentation
             foreach (var c in empties)
             {
                 var slot = GetSlot(i++);
-                // Empty slot: dashed feel via dark wedges
+                // Empty slot: neutral wedges (not a real biome)
                 var edges = new[]
                 {
-                    BiomeId.Forest, BiomeId.Forest, BiomeId.Forest,
-                    BiomeId.Forest, BiomeId.Forest, BiomeId.Forest,
+                    BiomeId.Neutral, BiomeId.Neutral, BiomeId.Neutral,
+                    BiomeId.Neutral, BiomeId.Neutral, BiomeId.Neutral,
                 };
                 slot.Setup(c, edges, _hexSize * 0.92f, false, 0.2f);
                 bool isHover = hover.HasValue && hover.Value == c;
