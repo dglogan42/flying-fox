@@ -8,11 +8,31 @@ Design doc: [`../docs/design/STEAM_V1_DESIGN.md`](../docs/design/STEAM_V1_DESIGN
 
 | Layer | State |
 |-------|--------|
-| **Core** (pure C#, no `UnityEngine`) | Scaffolded — hex, board, deck, RNG, score, quests, run |
-| **Presentation / UI / Steam** | Not yet (PR-07+) |
-| **Unity project files** | Partial — open in Hub to generate Library + .meta |
+| **Core** (pure C#, no `UnityEngine`) | Hex, board, deck, RNG, score, quests, run |
+| **Presentation (PR-07/08 slice)** | Wedge tiles, map, pan/zoom, ghost place, IMGUI HUD |
+| **Playable scene** | `Assets/_Project/Scenes/Game.unity` + `GameBootstrap` |
+| **UI Toolkit / menus / Steam** | Later (PR-09+) |
 
 Web game remains playable under the repo root (`index.html` / Firefox extension).
+
+## Play in the Editor (first playable)
+
+1. [Unity Hub](https://unity.com/download) → **Add** → `flying-fox/unity` → **Unity 6 LTS**
+2. Open **`Assets/_Project/Scenes/Game`**
+3. Press **Play**
+
+`GameBootstrap` builds camera, map, input, and starts a **Classic** `RunController` run.
+
+### Controls
+
+| Input | Action |
+|--------|--------|
+| **LMB** on slot | Place selected hand tile |
+| **RMB** / **MMB** / **Space+LMB** | Pan |
+| **Scroll** | Zoom (0.45–2.4×) |
+| **R** / **Q** | Rotate tile |
+| **1–3** / **Tab** | Select / cycle hand |
+| HUD buttons | Rotate, cycle, new run |
 
 ## Requirements
 
@@ -25,16 +45,10 @@ Steamworks.NET is added later (`FF_STEAM`); Core does not need it.
 ## Open the project
 
 ```bash
-# From Unity Hub:
-# Add → /path/to/flying-fox/unity
-# Open with Unity 6 LTS
+# Unity Hub → Add → /path/to/flying-fox/unity → Unity 6 LTS
 ```
 
-First open will:
-
-- Resolve packages (URP, Input System, Test Framework)
-- Generate `.meta` files under `Assets/`
-- Create default scenes if missing — add `Boot`, `MainMenu`, `Game` under `Assets/_Project/Scenes/` (PR-01/10)
+First open will resolve packages (URP, Input System, Test Framework) and generate `.meta` files.
 
 ## Run EditMode tests
 
