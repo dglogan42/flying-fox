@@ -8,7 +8,17 @@ Ships as a **standalone web game** and a **Firefox extension** (no build step, n
 **Repository:** [github.com/dglogan42/flying-fox](https://github.com/dglogan42/flying-fox)
 
 ![License: MIT](https://img.shields.io/badge/license-MIT-green)
-![Platform: Web / Firefox](https://img.shields.io/badge/platform-Web%20%7C%20Firefox-orange)
+![Platform: Web / Firefox / Unity](https://img.shields.io/badge/platform-Web%20%7C%20Firefox%20%7C%20Unity-orange)
+
+### Steam / Unity (in progress)
+
+| Path | What |
+|------|------|
+| [`unity/`](unity/) | Unity project — pure C# **Core** scaffold (hex, deck, score, run) |
+| [`docs/design/STEAM_V1_DESIGN.md`](docs/design/STEAM_V1_DESIGN.md) | Full Steam v1 design + PR plan |
+| [`docs/STEAM_CHECKLIST.md`](docs/STEAM_CHECKLIST.md) | Shipping checklist |
+
+Open `unity/` in **Unity Hub** (Unity 6 LTS preferred). See [`unity/README.md`](unity/README.md).
 
 ---
 

@@ -44,6 +44,18 @@ web-ext-artifacts/
 # Packaged extension zip (regenerate with zip command in README)
 flying-fox-firefox.zip
 
+# Unity (also see unity/.gitignore)
+unity/[Ll]ibrary/
+unity/[Tt]emp/
+unity/[Oo]bj/
+unity/[Bb]uild/
+unity/[Bb]uilds/
+unity/[Ll]ogs/
+unity/[Uu]ser[Ss]ettings/
+unity/*.csproj
+unity/*.sln
+unity/steam_appid.txt
+
 # Caches
 .cache/
 .parcel-cache/
