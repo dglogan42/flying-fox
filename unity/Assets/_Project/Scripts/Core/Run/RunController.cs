@@ -57,6 +57,9 @@ namespace FlyingFox.Core
         public int PerfectCount { get; private set; }
         public int MatchEdgeCount { get; private set; }
         public bool NaturalEnd { get; private set; }
+        /// <summary>Rock Anchor: next place soft-perfect if ≤1 mismatch.</summary>
+        public bool AnchorArmed { get; private set; }
+        public IReadOnlyList<AbilityProc> LastAbilityProcs { get; private set; } = Array.Empty<AbilityProc>();
 
         private readonly DeckFactory _factory = new DeckFactory();
         private IRng _rng;
@@ -76,7 +79,9 @@ namespace FlyingFox.Core
             PerfectCount = 0;
             MatchEdgeCount = 0;
             NaturalEnd = false;
-            Breakdown.Matches = Breakdown.Perfects = Breakdown.Tiles = Breakdown.Quests = 0;
+            AnchorArmed = false;
+            LastAbilityProcs = Array.Empty<AbilityProc>();
+            Breakdown.Matches = Breakdown.Perfects = Breakdown.Tiles = Breakdown.Quests = Breakdown.Abilities = 0;
             SelectedHandIndex = 0;
             _factory.ResetIds(1);
 
@@ -123,18 +128,30 @@ namespace FlyingFox.Core
 
             var tile = Hand[SelectedHandIndex];
             var ev = PlacementService.Evaluate(Board, at, tile.Edges);
-            int placeScore = PlacementService.ScoreFor(ev, Config.Balance);
+            bool usedAnchor = AnchorArmed;
+            var scored = FoxAbilityService.Score(ev, Config.Balance, usedAnchor);
+            AnchorArmed = false;
 
             Board.Place(new PlacedTile(at, tile.Id, tile.Edges));
             Hand.RemoveAt(SelectedHandIndex);
             if (SelectedHandIndex >= Hand.Count)
                 SelectedHandIndex = Math.Max(0, Hand.Count - 1);
 
-            Score += placeScore;
-            Breakdown.AddPlacement(ev, Config.Balance);
+            Score += scored.Total;
+            Breakdown.AddPlacement(ev, Config.Balance, scored.PerfectGranted, scored.AbilityPoints);
             PlacedHandTiles++;
             MatchEdgeCount += ev.Matches;
-            if (ev.IsPerfect) PerfectCount++;
+            if (scored.PerfectGranted) PerfectCount++;
+            if (scored.ArmAnchor) AnchorArmed = true;
+            LastAbilityProcs = scored.Procs;
+
+            // Water Eddy — draw up to HandMax
+            if (scored.EddyDraw && Deck.Count > 0 && Hand.Count < FoxAbilityService.HandMax)
+            {
+                var extra = Deck[Deck.Count - 1];
+                Deck.RemoveAt(Deck.Count - 1);
+                Hand.Add(extra);
+            }
 
             int questGain = QuestService.Check(Board, Quests);
             if (questGain > 0)

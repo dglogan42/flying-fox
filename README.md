@@ -31,6 +31,7 @@ Open `unity/` in **Unity Hub** (Unity 6 LTS preferred). See [`unity/README.md`](
 - Hex map with four biomes: **Forest**, **Meadow**, **Water**, **Rock**
 - **Deck of 36** tiles and a **hand of 3**
 - Edge-matching score plus **perfect placement** bonus
+- **Fox abilities** per biome (Canopy Leap, Sunbeam, Eddy, Anchor)
 - Side **quests** (clusters and island size) for big points
 - Pan / zoom map, rotate tiles, best score saved in `localStorage`
 - Firefox toolbar button (and **Alt+Shift+F**) to open the game tab
@@ -52,6 +53,10 @@ Open `unity/` in **Unity Hub** (Unity 6 LTS preferred). See [`unity/README.md`](
 | Place a tile | +2 |
 | Matching edge | +12 each |
 | Perfect placement (all contacts match) | +20 |
+| **Forest — Canopy Leap** | +6 per Forest match |
+| **Meadow — Sunbeam** | +15 on perfect with a Meadow match |
+| **Water — Eddy** | Draw +1 (hand up to 4) on any Water match |
+| **Rock — Anchor** | +10; next place: ≤1 mismatch still Perfect |
 | Quests | +25–50 each |
 
 ### Controls

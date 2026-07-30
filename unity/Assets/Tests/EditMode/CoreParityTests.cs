@@ -35,21 +35,42 @@ namespace FlyingFox.Core.Tests
         }
 
         [Test]
-        public void Placement_PerfectMatch_Scores_2_Plus_12_Plus_20()
+        public void Placement_PerfectForest_Includes_CanopyLeap()
         {
             var board = new BoardModel();
             var hub = DeckFactory.HubEdges;
             board.Place(new PlacedTile(HexCoord.Origin, 0, hub));
 
-            // Place east: contact edge 3 (W) of new tile vs hub edge 0 (E) = Forest
-            // New tile edges all Forest for perfect if hub E is F — hub[0]=F
+            // Place east: contact hub edge 0 = Forest → 1 forest match → perfect
+            // base 2+12+20 + Canopy Leap +6 = 40
             var edges = BiomeCodec.FromChars('F', 'F', 'F', 'F', 'F', 'F');
-            var at = HexCoord.Origin.Neighbor(0); // E of hub
+            var at = HexCoord.Origin.Neighbor(0);
             var ev = PlacementService.Evaluate(board, at, edges);
             Assert.AreEqual(1, ev.Contacts);
             Assert.AreEqual(1, ev.Matches);
             Assert.IsTrue(ev.IsPerfect);
-            Assert.AreEqual(2 + 12 + 20, PlacementService.ScoreFor(ev, GameBalance.WebParity));
+            Assert.AreEqual(2 + 12 + 20 + 6, PlacementService.ScoreFor(ev, GameBalance.WebParity));
+        }
+
+        [Test]
+        public void Rock_Anchor_SoftPerfect_On_Next_Place()
+        {
+            var run = new RunController();
+            run.Start(new RunConfig { Seed = 99 }, new SplitMix64Rng(99));
+            // Force a rock-matching place is hard without fixed board; unit-test scorer instead:
+            var matched = new[] { BiomeId.Rock };
+            var ev = new PlacementEval(1, 1, 2, matched); // not hard perfect
+            var first = FoxAbilityService.Score(ev, GameBalance.WebParity, false);
+            Assert.IsTrue(first.ArmAnchor);
+            Assert.AreEqual(10, first.AbilityPoints);
+
+            var soft = FoxAbilityService.Score(
+                new PlacementEval(1, 1, 2, new[] { BiomeId.Meadow }),
+                GameBalance.WebParity,
+                anchorArmed: true);
+            Assert.IsTrue(soft.PerfectGranted);
+            Assert.IsFalse(soft.HardPerfect);
+            Assert.AreEqual(15, soft.AbilityPoints); // sunbeam on soft perfect + meadow
         }
 
         [Test]

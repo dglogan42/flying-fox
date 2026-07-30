@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace FlyingFox.Core
 {
     /// <summary>
@@ -22,12 +24,14 @@ namespace FlyingFox.Core
         public readonly int Matches;
         public readonly int Mismatches;
         public readonly int Contacts;
+        public readonly IReadOnlyList<BiomeId> MatchedBiomes;
 
-        public PlacementEval(int matches, int mismatches, int contacts)
+        public PlacementEval(int matches, int mismatches, int contacts, IReadOnlyList<BiomeId> matchedBiomes = null)
         {
             Matches = matches;
             Mismatches = mismatches;
             Contacts = contacts;
+            MatchedBiomes = matchedBiomes ?? System.Array.Empty<BiomeId>();
         }
 
         public bool IsPerfect => Contacts > 0 && Matches == Contacts;
@@ -35,18 +39,20 @@ namespace FlyingFox.Core
 
     public sealed class ScoreBreakdown
     {
-        public int Matches;  // sum of matches * matchPoints
-        public int Perfects; // sum of perfect bonuses
-        public int Tiles;    // sum of place points (hand places only)
+        public int Matches;   // sum of matches * matchPoints
+        public int Perfects;  // sum of perfect bonuses
+        public int Tiles;     // sum of place points (hand places only)
         public int Quests;
+        public int Abilities; // fox biome ability points
 
-        public int Total => Matches + Perfects + Tiles + Quests;
+        public int Total => Matches + Perfects + Tiles + Quests + Abilities;
 
-        public void AddPlacement(PlacementEval ev, GameBalance bal)
+        public void AddPlacement(PlacementEval ev, GameBalance bal, bool perfectGranted, int abilityPoints)
         {
             Matches += ev.Matches * bal.MatchPoints;
-            if (ev.IsPerfect) Perfects += bal.PerfectBonus;
+            if (perfectGranted) Perfects += bal.PerfectBonus;
             Tiles += bal.PlacePoints;
+            Abilities += abilityPoints;
         }
 
         public void AddQuest(int reward) => Quests += reward;

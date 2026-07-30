@@ -84,17 +84,24 @@ namespace FlyingFox.Presentation
             _ghost.gameObject.SetActive(true);
             _baseGhostPos = HexMeshUtil.ToWorld(at, _hexSize);
 
-            int pts = PlacementService.ScoreFor(eval, bal);
-            _scoreLabel.text = $"+{pts}";
+            // Ability-aware score (anchor state comes from optional GameSession)
+            bool anchor = GameSession.Instance != null && GameSession.Instance.Run != null
+                && GameSession.Instance.Run.AnchorArmed;
+            var scored = FoxAbilityService.Score(eval, bal, anchor);
+            perfect = scored.PerfectGranted;
+            _scoreLabel.text = $"+{scored.Total}";
             _scoreLabel.color = perfect
                 ? BiomePalette.PerfectRing
                 : new Color(0.99f, 0.98f, 0.88f);
 
             if (eval.Contacts > 0)
             {
-                _subLabel.text = perfect
+                string line = perfect
                     ? $"{eval.Matches}/{eval.Contacts} perfect"
                     : $"{eval.Matches}/{eval.Contacts} match";
+                if (scored.AbilityPoints > 0) line += $" · +{scored.AbilityPoints} abil";
+                if (anchor) line += " · ⚓";
+                _subLabel.text = line;
                 _subLabel.color = perfect
                     ? BiomePalette.PerfectRing
                     : BiomePalette.OkRing;

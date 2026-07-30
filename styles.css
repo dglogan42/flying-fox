@@ -173,6 +173,64 @@ body {
   margin-bottom: 0.6rem;
 }
 
+#quests-panel h2.quests-heading {
+  margin-top: 0.85rem;
+}
+
+.ability-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 0.35rem;
+}
+
+.ability {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.45rem 0.55rem;
+  font-size: 0.72rem;
+  line-height: 1.3;
+  border-left-width: 3px;
+}
+
+.ability.biome-F { border-left-color: #52b788; }
+.ability.biome-M { border-left-color: #b5c76a; }
+.ability.biome-W { border-left-color: #4cc9f0; }
+.ability.biome-R { border-left-color: #adb5bd; }
+
+.ability.armed {
+  box-shadow: 0 0 0 1px rgba(244, 162, 97, 0.45);
+}
+
+.ability-name {
+  font-weight: 700;
+  color: var(--cream);
+  margin-bottom: 0.1rem;
+}
+
+.ability-desc {
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+
+.ability-toast {
+  margin: 0.4rem 0 0;
+  padding: 0.4rem 0.5rem;
+  border-radius: 6px;
+  background: rgba(244, 162, 97, 0.15);
+  border: 1px solid rgba(244, 162, 97, 0.4);
+  color: var(--accent);
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.ability-toast.hidden {
+  display: none;
+}
+
 #quest-list {
   list-style: none;
   display: flex;

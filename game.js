@@ -18,9 +18,42 @@
 
   const BIOME_LIST = ["F", "M", "W", "R"];
   const HAND_SIZE = 3;
+  const HAND_MAX = 4; // Water Eddy can overdraw to 4
   const DECK_SIZE = 36;
   const HEX_SIZE = 36; // flat-top radius
   const STORAGE_KEY = "flying-fox-deck-best";
+
+  /** Unique fox abilities per biome — trigger on matched edges when placing. */
+  const FOX_ABILITIES = {
+    F: {
+      id: "canopy-leap",
+      emoji: "🌲",
+      name: "Canopy Leap",
+      short: "+6 per Forest match",
+      desc: "Forest matches grant +6 extra each (on top of +12).",
+    },
+    M: {
+      id: "sunbeam",
+      emoji: "☀️",
+      name: "Sunbeam",
+      short: "Perfect + Meadow → +15",
+      desc: "Perfect place with a Meadow match: +15 Sunbeam.",
+    },
+    W: {
+      id: "eddy",
+      emoji: "💧",
+      name: "Eddy",
+      short: "Water match → draw +1",
+      desc: "Any Water match draws +1 tile (hand up to 4).",
+    },
+    R: {
+      id: "anchor",
+      emoji: "🪨",
+      name: "Anchor",
+      short: "Rock match → +10 & soft perfect next",
+      desc: "Rock match: +10 now. Next place: ≤1 mismatch still counts as Perfect.",
+    },
+  };
 
   // Flat-top hex neighbor deltas (edge index 0 = E, then clockwise)
   // edges: 0 E, 1 SE, 2 SW, 3 W, 4 NW, 5 NE
@@ -39,6 +72,8 @@
   const ctx = canvas.getContext("2d");
   const handEl = document.getElementById("hand");
   const questListEl = document.getElementById("quest-list");
+  const abilityListEl = document.getElementById("ability-list");
+  const abilityToastEl = document.getElementById("ability-toast");
   const scoreEl = document.getElementById("score");
   const deckEl = document.getElementById("deck-count");
   const placedEl = document.getElementById("placed-count");
@@ -62,11 +97,16 @@
   let placed = 0;
   let matchPoints = 0;
   let questPoints = 0;
+  let abilityPoints = 0;
   let quests = [];
   let best = Number(localStorage.getItem(STORAGE_KEY) || 0);
   let running = false;
   let hoverHex = null; // {q,r} or null
-  let breakdown = { matches: 0, perfects: 0, quests: 0, tiles: 0 };
+  let breakdown = { matches: 0, perfects: 0, quests: 0, tiles: 0, abilities: 0 };
+  /** Rock Anchor: next placement treats ≤1 mismatch as perfect for bonus. */
+  let anchorArmed = false;
+  let toastTimer = 0;
+  let lastAbilityProcs = []; // [{biome, name, detail}]
 
   // camera
   let camX = 0;
@@ -215,6 +255,7 @@
   }
 
   function drawToHand() {
+    // Refill toward base hand size; Eddy may already have filled above HAND_SIZE
     while (hand.length < HAND_SIZE && deck.length > 0) {
       hand.push(deck.pop());
     }
@@ -240,16 +281,114 @@
     let matches = 0;
     let mismatches = 0;
     let contacts = 0;
+    const matchedBiomes = []; // biome letter per matched edge
     for (let e = 0; e < 6; e++) {
       const n = neighbor(q, r, e);
       const nt = map.get(key(n.q, n.r));
       if (!nt) continue;
       contacts++;
       const theirEdge = nt.edges[OPPOSITE[e]];
-      if (theirEdge === edges[e]) matches++;
-      else mismatches++;
+      if (theirEdge === edges[e]) {
+        matches++;
+        matchedBiomes.push(edges[e]);
+      } else {
+        mismatches++;
+      }
     }
-    return { matches, mismatches, contacts };
+    return { matches, mismatches, contacts, matchedBiomes };
+  }
+
+  function countBiome(matchedBiomes, biome) {
+    let n = 0;
+    for (const b of matchedBiomes) if (b === biome) n++;
+    return n;
+  }
+
+  /**
+   * Score a placement including fox abilities.
+   * @returns {{ base, perfect, ability, total, perfectGranted, procs, eddyDraw, armAnchor }}
+   */
+  function scorePlacement(eval_, useAnchor) {
+    const bal = { place: 2, match: 12, perfect: 20, forestExtra: 6, meadowSun: 15, rockFlat: 10 };
+    let base = eval_.matches * bal.match + bal.place;
+    const hardPerfect = eval_.contacts > 0 && eval_.matches === eval_.contacts;
+    const softPerfect = useAnchor && eval_.contacts > 0 && eval_.mismatches <= 1 && eval_.matches >= 1;
+    const perfectGranted = hardPerfect || softPerfect;
+    let perfect = perfectGranted ? bal.perfect : 0;
+
+    const procs = [];
+    let ability = 0;
+    const mb = eval_.matchedBiomes || [];
+    const f = countBiome(mb, "F");
+    const m = countBiome(mb, "M");
+    const w = countBiome(mb, "W");
+    const r = countBiome(mb, "R");
+
+    if (f > 0) {
+      const bonus = f * bal.forestExtra;
+      ability += bonus;
+      procs.push({ biome: "F", name: "Canopy Leap", detail: `+${bonus} (${f}× forest)` });
+    }
+    if (perfectGranted && m > 0) {
+      ability += bal.meadowSun;
+      procs.push({ biome: "M", name: "Sunbeam", detail: `+${bal.meadowSun}` });
+    }
+    let eddyDraw = false;
+    if (w > 0) {
+      eddyDraw = true;
+      procs.push({ biome: "W", name: "Eddy", detail: "draw +1" });
+    }
+    let armAnchor = false;
+    if (r > 0) {
+      ability += bal.rockFlat;
+      armAnchor = true;
+      procs.push({ biome: "R", name: "Anchor", detail: `+${bal.rockFlat} · soft perfect next` });
+    }
+    if (useAnchor && softPerfect && !hardPerfect) {
+      procs.push({ biome: "R", name: "Anchor grip", detail: "soft perfect!" });
+    }
+
+    return {
+      base,
+      perfect,
+      ability,
+      total: base + perfect + ability,
+      perfectGranted,
+      hardPerfect,
+      procs,
+      eddyDraw,
+      armAnchor,
+    };
+  }
+
+  function showAbilityToast(procs) {
+    if (!abilityToastEl) return;
+    if (!procs || !procs.length) {
+      abilityToastEl.classList.add("hidden");
+      abilityToastEl.textContent = "";
+      return;
+    }
+    abilityToastEl.textContent = procs.map((p) => `${FOX_ABILITIES[p.biome]?.emoji || ""} ${p.name}: ${p.detail}`).join(" · ");
+    abilityToastEl.classList.remove("hidden");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+      abilityToastEl.classList.add("hidden");
+    }, 2800);
+  }
+
+  function renderAbilities() {
+    if (!abilityListEl) return;
+    abilityListEl.innerHTML = "";
+    for (const b of BIOME_LIST) {
+      const ab = FOX_ABILITIES[b];
+      const li = document.createElement("li");
+      li.className = "ability biome-" + b + (b === "R" && anchorArmed ? " armed" : "");
+      li.innerHTML = `
+        <div class="ability-name">${ab.emoji} ${ab.name}${b === "R" && anchorArmed ? " · ARMED" : ""}</div>
+        <div class="ability-desc">${ab.desc}</div>
+      `;
+      abilityListEl.appendChild(li);
+    }
   }
 
   function isValidPlacement(q, r) {
@@ -270,24 +409,32 @@
     if (!isValidPlacement(q, r)) return;
 
     const eval_ = evaluatePlacement(q, r, tile.edges);
-    // Soft rule: allow mismatch but reward matches heavily
-    const placeScore =
-      eval_.matches * 12 +
-      (eval_.matches === eval_.contacts && eval_.contacts > 0 ? 20 : 0) +
-      2; // base place
+    const usedAnchor = anchorArmed;
+    const scored = scorePlacement(eval_, usedAnchor);
+    // Consume rock anchor after this place (whether or not soft perfect fired)
+    anchorArmed = false;
 
     map.set(key(q, r), { q, r, edges: tile.edges.slice(), id: tile.id });
     hand.splice(selectedHand, 1);
     if (selectedHand >= hand.length) selectedHand = Math.max(0, hand.length - 1);
 
-    score += placeScore;
-    matchPoints += placeScore;
+    score += scored.total;
+    matchPoints += scored.base + scored.perfect;
+    abilityPoints += scored.ability;
     placed++;
     breakdown.matches += eval_.matches * 12;
-    if (eval_.matches === eval_.contacts && eval_.contacts > 0) {
-      breakdown.perfects += 20;
-    }
     breakdown.tiles += 2;
+    if (scored.perfectGranted) breakdown.perfects += 20;
+    if (scored.ability) breakdown.abilities += scored.ability;
+
+    if (scored.armAnchor) anchorArmed = true;
+    lastAbilityProcs = scored.procs;
+    showAbilityToast(scored.procs);
+
+    // Water Eddy — extra draw (hand up to HAND_MAX)
+    if (scored.eddyDraw && deck.length > 0 && hand.length < HAND_MAX) {
+      hand.push(deck.pop());
+    }
 
     lastPlace = { q, r, t: performance.now() };
     const questGain = checkQuests();
@@ -300,17 +447,17 @@
     drawToHand();
     updateHUD();
     renderQuests();
+    renderAbilities();
     draw();
 
     if (hand.length === 0 && deck.length === 0) {
       endRun(true);
     } else if (hand.length > 0 && !hasAnyValidPlay()) {
-      // Can still cycle/rotate — only end if no empty adjacent at all
       const empties = getEmptyAdjacent();
       if (empties.length === 0) endRun(true);
       else {
         handHintEl.textContent =
-          "No perfect fits required — place on any glowing hex. Mismatches just score less.";
+          "No perfect fits required — place on any glowing hex. Match biomes for fox abilities!";
       }
     } else {
       handHintEl.textContent = hintForSelection();
@@ -573,7 +720,10 @@
   function hintForSelection() {
     const t = hand[selectedHand];
     if (!t) return "No tiles left — run complete.";
-    return "Selected tile ready · R / ↻ to rotate · click a glowing hex to place";
+    const tip = anchorArmed
+      ? "⚓ Anchor armed — ≤1 mismatch still Perfect · R rotate · place on glow"
+      : "Match biomes for fox powers · R rotate · place on glow";
+    return tip;
   }
 
   // ─── map rendering ──────────────────────────────────────
@@ -629,19 +779,19 @@
         ctx.closePath();
         ctx.stroke();
 
-        // score preview
-        const pts =
-          ev.matches * 12 +
-          (ev.matches === ev.contacts && ev.contacts > 0 ? 20 : 0) +
-          2;
+        // score preview (includes fox abilities)
+        const sc = scorePlacement(ev, anchorArmed);
         ctx.fillStyle = "#fefae0";
         ctx.font = "bold 14px Segoe UI, sans-serif";
         ctx.textAlign = "center";
-        ctx.fillText(`+${pts}`, x, y - HEX_SIZE - 6);
+        ctx.fillText(`+${sc.total}`, x, y - HEX_SIZE - 6);
         if (ev.contacts) {
           ctx.font = "11px Segoe UI, sans-serif";
           ctx.fillStyle = "#8fb39a";
-          ctx.fillText(`${ev.matches}/${ev.contacts} match`, x, y - HEX_SIZE + 10);
+          let line = `${ev.matches}/${ev.contacts} match`;
+          if (sc.ability) line += ` · abil +${sc.ability}`;
+          if (anchorArmed) line += " · ⚓";
+          ctx.fillText(line, x, y - HEX_SIZE + 10);
         }
       } else {
         // empty slot marker
@@ -715,11 +865,15 @@
     placed = 0;
     matchPoints = 0;
     questPoints = 0;
-    breakdown = { matches: 0, perfects: 0, quests: 0, tiles: 0 };
+    abilityPoints = 0;
+    breakdown = { matches: 0, perfects: 0, quests: 0, tiles: 0, abilities: 0 };
     quests = makeQuests();
     running = true;
     hoverHex = null;
     lastPlace = null;
+    anchorArmed = false;
+    lastAbilityProcs = [];
+    showAbilityToast([]);
 
     // starter tile — cozy forest hub
     const hub = makeTile(["F", "F", "M", "M", "W", "F"]);
@@ -733,6 +887,7 @@
     drawToHand();
     updateHUD();
     renderQuests();
+    renderAbilities();
     titleScreen.classList.add("hidden");
     endScreen.classList.add("hidden");
     handHintEl.textContent = hintForSelection();
@@ -742,6 +897,7 @@
   function endRun(natural) {
     if (!running) return;
     running = false;
+    anchorArmed = false;
 
     // leftover quests don't auto-complete
     if (score > best) {
@@ -756,6 +912,7 @@
     endBreakdownEl.innerHTML = `
       <li><span>Edge matches</span><span>${breakdown.matches}</span></li>
       <li><span>Perfect placements</span><span>${breakdown.perfects}</span></li>
+      <li><span>Fox abilities</span><span>${breakdown.abilities}</span></li>
       <li><span>Quests</span><span>${breakdown.quests}</span></li>
       <li><span>Tiles placed</span><span>${breakdown.tiles}</span></li>
     `;

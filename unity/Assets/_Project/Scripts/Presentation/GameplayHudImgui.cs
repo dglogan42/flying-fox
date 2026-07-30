@@ -106,6 +106,20 @@ namespace FlyingFox.Presentation
             DrawStat("Deck", _run.Deck.Count.ToString());
             DrawStat("Placed", _run.PlacedHandTiles.ToString());
             DrawStat("Board", $"{_run.Board.Count} tiles");
+            if (_run.AnchorArmed)
+                GUILayout.Label("⚓ Anchor ARMED — soft perfect next", _title);
+
+            GUILayout.Space(6);
+            GUILayout.Label("Fox abilities", _title);
+            GUILayout.Label("🌲 Canopy Leap  +6 / Forest match", _muted);
+            GUILayout.Label("☀️ Sunbeam  +15 perfect + Meadow", _muted);
+            GUILayout.Label("💧 Eddy  Water match → draw +1", _muted);
+            GUILayout.Label("🪨 Anchor  +10 · soft perfect next", _muted);
+            if (_run.LastAbilityProcs != null && _run.LastAbilityProcs.Count > 0)
+            {
+                foreach (var p in _run.LastAbilityProcs)
+                    GUILayout.Label($"→ {p.Name}: {p.Detail}", _body);
+            }
 
             GUILayout.Space(10);
 
@@ -208,6 +222,7 @@ namespace FlyingFox.Presentation
             GUILayout.Label("Breakdown", _muted);
             GUILayout.Label($"  Edge matches     {r.Breakdown.Matches}", _body);
             GUILayout.Label($"  Perfect bonuses  {r.Breakdown.Perfects}", _body);
+            GUILayout.Label($"  Fox abilities    {r.Breakdown.Abilities}", _body);
             GUILayout.Label($"  Tiles placed     {r.Breakdown.Tiles}", _body);
             GUILayout.Label($"  Quests           {r.Breakdown.Quests}", _body);
             GUILayout.Label($"  Perfects count   {r.PerfectCount}", _muted);
