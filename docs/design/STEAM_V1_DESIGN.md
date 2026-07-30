@@ -65,7 +65,7 @@ The core rules in `game.js` are small, deterministic, and already fun. Porting t
 | G1 | **Classic mode parity+** | Same rules as web (scoring, deck 36, hand 3, soft match, quests, end conditions); clearer UI; juice (place SFX, score popups, quest complete) |
 | G2 | **Second mode: Daily** | Shared UTC date seed (frozen hash + PRNG); scored/practice rules; local history; comparable scores for social/store trailer |
 | G3 | **Full-game shell** | Main menu, mode select, settings (audio, graphics, controls, language-ready), pause, results with breakdown + medals |
-| G4 | **Light meta** | 2–3 unlockable fox skins + 2–3 table/board themes; unlock by medals or lifetime stats |
+| G4 | **Light meta** | **3 fox skins + 3 table themes total** (1 default each + 2 unlockable each); unlock by medals or lifetime stats |
 | G5 | **Steamworks slice** | App ID wired; 10 achievements; overlay; Steam Cloud for profile JSON; Windows build primary |
 | G6 | **Ship feel** | Music bed + SFX set; readable hex art (not pure flat wedges alone); first session 20–45 min without feeling empty |
 | G7 | **Solo-shippable** | Content budget fixed; PR plan incremental; no engine plugins that block Linux stretch |
@@ -144,13 +144,23 @@ The core rules in `game.js` are small, deterministic, and already fun. Porting t
 4. **PRNG:** All deck generation for Daily (and Classic when replaying a seed) goes through `IRng` implemented as **`SplitMix64`** (public-domain algorithm; documented in `SplitMix64Rng.cs` comments). **Do not** use `string.GetHashCode()`, `System.Random` default constructor, or .NET-version-dependent algorithms for Daily. `IRng.Reseed(seed)` zeros/sets state from the `int` seed (sign-extend to `ulong` as `unchecked((ulong)(uint)seed)` then mix once).
 5. **Golden deck fixtures:** EditMode tests publish at least 3 dates → seed → first 5 tile edge arrays after `DeckFactory.Build` (presets + RNG fill + shuffle using only `IRng`). Fixtures live under `Assets/Tests/EditMode/Fixtures/DailySeeds.json`.
 
-**Daily run rules:**
+**Daily run rules (locked — multi-attempt best-of-day):**
 
 - Same 36-tile deck construction path, same hub, same quests as Classic.
-- **Scored vs practice:** First finished run on a given UTC date that is not already marked scored is **scored**. Any subsequent finish that UTC day is **practice** (UI banner).
-  - Scored: may overwrite `daily.bestByDate[date]` if score is **strictly greater**; always updates streak rules below.
-  - Practice: **never** updates `bestByDate`, streak, lifetime stats, unlocks, or Steam achievements.
-- **Streak:** After a **scored** finish on UTC date `D`, if `lastScoredUtcDate` is `D-1` day, `streak++`; else if already `D`, unchanged; else `streak = 1`. Set `lastScoredUtcDate = D`. Missed days break the streak on next scored play (no retroactive fill).
+- Players may run **today’s island as many times as they want**. All normal Daily finishes are **scored** (not one-shot hardcore).
+- **Best of day:** On every scored Daily finish for UTC date `D`:
+  - If `bestByDate` has no key `D` → write `score`.
+  - Else if `score > bestByDate[D]` → overwrite (strictly greater only; ties keep prior).
+  - Always recompute `bestDaily = max(bestDaily, score)` when `bestByDate` updates (or equals after first write).
+- **Streak (once per UTC day):** Only the **first** scored finish on date `D` advances streak:
+  - If `lastScoredUtcDate` is the previous calendar day → `streak++`.
+  - Else if `lastScoredUtcDate == D` → streak unchanged (replay same day).
+  - Else → `streak = 1`.
+  - Set `lastScoredUtcDate = D` on that first finish. Missed days break streak on next first-of-day finish (no retroactive fill).
+- **Lifetime / unlocks / score achievements:** Every scored Daily finish counts (tiles, perfects, medals, `FF_BIRCH`, etc.), same as Classic scored runs, subject to natural-end gates where noted.
+- **`DailyPractice` mode (explicit menu option):** Same seed, **no** profile mutations, **no** achievements. UI: “Practice — stats & bests off.” Do **not** auto-convert later finishes into practice.
+- **UI copy for extra runs the same day:** “Additional run — best of day still counts” (not “practice”).
+- Abandon still counts as a scored finish when not in Practice mode (updates best if higher; first abandon of day can set streak).
 - No global leaderboard for v1 (local only); schema-ready for later.
 
 ### Stretch mode (not committed)
@@ -172,17 +182,18 @@ Main Menu
 
 ### Mode eligibility for medals, unlocks, achievements
 
-| Effect | Classic scored | Daily scored | Daily practice | Abandoned scored run |
-|--------|:--------------:|:------------:|:--------------:|:--------------------:|
-| Update `bestClassic` / `bestDaily` | ✓ | ✓ | ✗ | ✓ if higher |
-| Lifetime counters (`tilesPlaced`, etc.) | ✓ | ✓ | ✗ | ✓ (partial progress counted) |
-| Medals (end screen + profile high-water) | ✓ | ✓ | display only, no profile | ✓ |
+| Effect | Classic scored | Daily scored (incl. same-day replays) | DailyPractice mode | Abandoned scored run |
+|--------|:--------------:|:--------------------------------------:|:------------------:|:--------------------:|
+| Update `bestClassic` / `bestByDate` / `bestDaily` | ✓ classic | ✓ if score strictly better for day | ✗ | ✓ if higher |
+| Advance Daily streak | ✗ | ✓ first finish of UTC day only | ✗ | ✓ if first finish of that UTC day |
+| Lifetime counters (`tilesPlaced`, etc.) | ✓ | ✓ every finish | ✗ | ✓ (progress counted) |
+| Medals (end screen + profile high-water) | ✓ | ✓ | display only | ✓ |
 | Score-tier achievements (`FF_BIRCH`, etc.) | ✓ | ✓ | ✗ | ✓ if threshold met |
 | `FF_FIRST_CANOPY`, `FF_EMPTY_DECK` | natural complete only | natural complete only | ✗ | ✗ |
-| `FF_DAILY_*` | ✗ | ✓ | ✗ | Daily natural or finish rules per achievement |
+| `FF_DAILY_FIRST` / `FF_DAILY_WEEK` | ✗ | ✓ (streak on first-of-day) | ✗ | Daily finish rules per achievement |
 | Unlocks: Birch fox / Golden fox | ✓ either mode | ✓ | ✗ | ✓ if condition met |
 | Unlock: Moonlit table (all quests Classic) | ✓ Classic only | ✗ | ✗ | ✓ Classic if all quests done that run |
-| Unlock: Starry (5 Daily **scored** finishes) | ✗ | ✓ | ✗ | counts if scored Daily finish |
+| Unlock: Starry (5 Daily **scored** finishes) | ✗ | ✓ each scored Daily finish | ✗ | counts if scored Daily finish |
 
 ---
 
@@ -1415,4 +1426,4 @@ flowchart TB
 
 ---
 
-*End of design document — Status: Draft rev 2 (2026-07-30). Review amendments applied.*
+*End of design document — Status: Accepted (rev 3 — Daily best-of-day locked) rev 2 (2026-07-30). Review amendments applied.*
