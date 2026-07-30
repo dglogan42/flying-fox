@@ -24,6 +24,8 @@ Open `unity/` in **Unity Hub** (Unity 6 LTS preferred). See [`unity/README.md`](
 
 **Build pipeline:** [docs/BUILD_PIPELINE.md](docs/BUILD_PIPELINE.md) — GitHub Actions (Core CI always; Unity tests/builds with license secrets) + local `unity/Tools/build.sh`.
 
+**Nintendo Switch (eShop):** [docs/SWITCH_ESHP.md](docs/SWITCH_ESHP.md) — store listing draft, cert checklist, gamepad cursor. Real NSP requires NintendoSDK (not public).
+
 ---
 
 ## Features

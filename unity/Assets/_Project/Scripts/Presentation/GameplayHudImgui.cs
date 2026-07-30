@@ -205,7 +205,9 @@ namespace FlyingFox.Presentation
 
             GUILayout.FlexibleSpace();
             GUILayout.Label(
-                "LMB place · RMB pan · Scroll zoom\nEsc abandon · Ctrl+N new run",
+                "LMB place · RMB pan · Scroll zoom\n" +
+                "Gamepad: stick/D-pad aim · A place · B/Y rotate · X hand\n" +
+                "Esc abandon · Ctrl+N new run",
                 _muted);
         }
 

@@ -20,6 +20,7 @@ namespace FlyingFox.Presentation
         [SerializeField] GhostPlacementView _ghost;
         [SerializeField] MapInputController _input;
         [SerializeField] GameplayHudImgui _hud;
+        [SerializeField] SwitchCursorController _cursor;
 
         RunController _run;
         int _activeSeed;
@@ -40,13 +41,15 @@ namespace FlyingFox.Presentation
             MapCameraController camera,
             GhostPlacementView ghost,
             MapInputController input,
-            GameplayHudImgui hud)
+            GameplayHudImgui hud,
+            SwitchCursorController cursor = null)
         {
             _map = map;
             _camera = camera;
             _ghost = ghost;
             _input = input;
             _hud = hud;
+            _cursor = cursor;
         }
 
         /// <summary>Called by <see cref="FlyingFox.App.GameBootstrap"/> before first Start.</summary>
@@ -98,14 +101,14 @@ namespace FlyingFox.Presentation
                 Balance = GameBalance.WebParity,
             }, new SplitMix64Rng(_activeSeed));
 
-            _input.Bind(_run, _camera, _map, _ghost);
+            _input.Bind(_run, _camera, _map, _ghost, _cursor);
             _input.InputEnabled = true;
             _hud.Bind(_run, _activeSeed);
             _ghost.Hide();
             _camera.FocusWorld(Vector3.zero);
             OnRunChanged();
 
-            Debug.Log($"[FlyingFox] Classic run seed={_activeSeed}");
+            Debug.Log($"[FlyingFox] Classic run seed={_activeSeed} platform-ready=switch-controls");
         }
 
         void OnDestroy()
@@ -120,10 +123,12 @@ namespace FlyingFox.Presentation
             if (_run == null || _map == null) return;
 
             _map.Rebuild(_run.Board);
+            _input.NotifyBoardChanged();
 
             if (_run.Phase == RunPhase.Ended)
             {
                 _ghost.Hide();
+                _cursor?.Unbind();
                 _input.InputEnabled = false;
                 var r = _run.BuildResult();
                 Debug.Log(

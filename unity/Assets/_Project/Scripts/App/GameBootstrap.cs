@@ -1,3 +1,4 @@
+using FlyingFox.Platform;
 using FlyingFox.Presentation;
 using UnityEngine;
 
@@ -58,6 +59,13 @@ namespace FlyingFox.App
             if (_built) return;
             _built = true;
 
+#if UNITY_SWITCH || FF_SWITCH_SIM
+            PlatformServices.Set(new SwitchPlatformServices());
+#else
+            PlatformServices.Set(new DesktopPlatformServices());
+#endif
+            Debug.Log($"[FlyingFox] Platform: {PlatformServices.Current.PlatformId}");
+
             var root = new GameObject("— Flying Fox —");
 
             // ── Camera ─────────────────────────────────────
@@ -111,6 +119,10 @@ namespace FlyingFox.App
             ghost.SetHexSize(_hexSize);
             ghost.Ensure();
 
+            var cursorGo = new GameObject("SwitchCursor");
+            cursorGo.transform.SetParent(root.transform, false);
+            var cursor = cursorGo.AddComponent<SwitchCursorController>();
+
             // ── Session host ───────────────────────────────
             transform.SetParent(root.transform, false);
             gameObject.name = "GameSession";
@@ -123,7 +135,7 @@ namespace FlyingFox.App
                           ?? gameObject.AddComponent<GameSession>();
 
             session.Configure(_hexSize, _useDebugSeed, _debugSeed);
-            session.Wire(map, mapCam, ghost, input, hud);
+            session.Wire(map, mapCam, ghost, input, hud, cursor);
 
             Debug.Log("[FlyingFox] GameBootstrap ready — Classic run starts on GameSession.Start.");
         }

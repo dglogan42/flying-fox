@@ -40,6 +40,25 @@ namespace FlyingFox.EditorTools
             BuildLinux64();
         }
 
+        [MenuItem("Flying Fox/Build/Nintendo Switch (requires SDK)")]
+        public static void BuildNintendoSwitch()
+        {
+#if UNITY_SWITCH
+            // Nintendo Switch module present — build NSO/NSP pipeline per Nintendo docs.
+            // Output folder is conventionally managed by the Switch build tools.
+            Build(BuildTarget.Switch, "Switch", "FlyingFox");
+#else
+            Debug.LogError(
+                "[FlyingFox.Build] Nintendo Switch module not installed.\n" +
+                "1) Register at https://developer.nintendo.com/\n" +
+                "2) Install NintendoSDK + Unity Switch support\n" +
+                "3) Open this project with a Switch-capable Unity Editor\n" +
+                "See docs/SWITCH_ESHP.md");
+            if (Application.isBatchMode)
+                EditorApplication.Exit(2);
+#endif
+        }
+
         public static void Build(
             BuildTarget target,
             string folderName,

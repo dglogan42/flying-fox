@@ -8,6 +8,7 @@
 | **Unity EditMode** (`unity-tests.yml`) | Unity path changes + manual | **Yes** (secrets) | Runs `CoreParityTests` via [game-ci](https://game.ci) |
 | **Unity Player** (`unity-build.yml`) | Manual (workflow_dispatch) | **Yes** | Windows / Linux / WebGL player artifacts |
 | **Local scripts** | Dev machine | Local Editor install | `unity/Tools/build.sh`, `run-editmode-tests.sh` |
+| **Nintendo Switch** | Licensed machine only | **NintendoSDK** (NDA) | See [SWITCH_ESHP.md](SWITCH_ESHP.md); `Tools/build-switch.sh` |
 
 ```
 push / PR
