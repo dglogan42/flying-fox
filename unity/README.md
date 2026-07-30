@@ -30,9 +30,24 @@ Web game remains playable under the repo root (`index.html` / Firefox extension)
 | **LMB** on slot | Place selected hand tile |
 | **RMB** / **MMB** / **Space+LMB** | Pan |
 | **Scroll** | Zoom (0.45–2.4×) |
-| **R** / **Q** | Rotate tile |
+| **R** / **E** / **Q** / **Z** | Rotate tile |
 | **1–3** / **Tab** | Select / cycle hand |
-| HUD buttons | Rotate, cycle, new run |
+| **Esc** | Abandon run |
+| **Ctrl+N** | New run |
+| HUD | Hand, quests, New / End / Same seed |
+
+Ghost shows **+score** and match count. Clicks on the left HUD do not place tiles.
+
+### Runtime hierarchy
+
+```
+— Flying Fox —
+├── Main Camera (+ MapCameraController)
+├── Directional Light
+├── HexMap
+├── GhostPlacement
+└── GameSession (+ MapInput, HUD)
+```
 
 ## Requirements
 
